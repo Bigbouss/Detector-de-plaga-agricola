@@ -1,0 +1,31 @@
+# === Archivos del sistema ===
+.DS_Store
+Thumbs.db
+
+# === Archivos de logs ===
+*.log
+
+# === Archivos temporales de editores ===
+*~
+*.swp
+*.swo
+*.bak
+
+# === Python ===
+__pycache__/
+*.py[cod]
+
+# === Jupyter Notebooks checkpoins ===
+.ipynb_checkpoints/
+
+# === Entornos virtuales de Python (por si alguien los crea) ===
+env/
+venv/
+ENV/
+
+# === Archivos generados por VSCode (si alguien lo usa) ===
+.vscode/
+
+# === Archivos comunes de Linux/macOS ===
+ehthumbs.db
+Icon?
