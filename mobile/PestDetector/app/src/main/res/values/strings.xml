@@ -1,3 +1,61 @@
+
 <resources>
-    <string name="app_name">PestDetector</string>
+
+    <string name="app_name">CropCare</string>
+
+    <!-- LOGIN SCREEN -->
+    <string name="log_scr_subtitle">Login</string>
+    <string name="log_scr_txtfield_email">email</string>
+    <string name="log_scr_txtfield_password">password</string>
+    <string name="log_scr_btn_login">Sign In</string>
+    <string name="log_scr_divider">or</string>
+    <string name="log_scr_btn_continue_google">Continue with Google </string>
+    <string name="log_scr_txt_dont_have_account">Don\'t Have An Account? </string>
+    <string name="log_scr_text_link_register">Sign Up</string>
+
+    <!-- REGISTER SCREEN -->
+    <string name="reg_scr_subtitle">Register</string>
+    <string name="reg_scr_txtfield_email">email</string>
+    <string name="reg_scr_txtfield_password">password</string>
+    <string name="reg_scr_btn_register">Register</string>
+    <string name="reg_scr_txt_already_have_account">Alredy Have An Account? </string>
+    <string name="reg_scr_text_link_login">Log In</string>
+
+    <!-- HOME WORKER SCREEN -->
+    <string name="home_worker_guide_card_title">Easy to Use</string>
+    <string name="home_worker_guide_first_step">Take a photo of the crop and wait for results</string>
+    <string name="home_worker_guide_second_step">If affected, complete the report</string>
+    <string name="home_worker_guide_third_step">Get treatment advice</string>
+    <string name="home_worker_camara_button">Take a photo</string>
+
+    <!-- HOME HISTORY SCREEN -->
+    <string name="home_history_list_title">History</string>
+
+    <!-- ANALYSIS REPORT SCREEN -->
+    <string name="analysis_result_bad_title">Threat Detected</string>
+    <string name="analysis_result_bad_description">Crop Disturbance Detected. Identified Issue: </string>
+    <string name="analysis_result_report_button">File Report</string>
+    <string name="analysis_result_good_title">Healthy Crop</string>
+    <string name="analysis_result_good_description">No anomalies detected in your crops.</string>
+    <string name="analysis_result_back_button">Back to Home</string>
+    <string name="analysis_result_try_again_title">Capture Error</string>
+    <string name="analysis_result_try_again_description">Image Scan Failed. Please retake the photo, ensuring sufficient lighting.</string>
+    <string name="analysis_result_try_again_button">Try Again</string>
+
+
+    <!-- Report SCREEN -->
+    <string name="report_card_title">Report</string>
+    <string name="report_card_label_name">Worker</string>
+    <string name="report_card_label_diagnostic">Diagnostic</string>
+    <string name="report_card_label_crop_zone">Cultivation area</string>
+    <string name="report_card_label_image">Analyzed photo</string>
+    <string name="report_card_label_observation">Observation</string>
+    <string name="report_card_button">Send</string>
+    <string name="report_card_placeholder_observation">Write Here…</string>
+
+
+
+
+
+
 </resources>

@@ -3,14 +3,16 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.jetbrainsKotlinSerialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
-    namespace = "com.capstone.pestdetector"
+    namespace = "com.capstone.cropcare"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.capstone.pestdetector"
+        applicationId = "com.capstone.cropcare"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -56,10 +58,29 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.lottie.compose)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.compose.ui.text.google.fonts)
 
     //Navigation
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.accompanist.navigation.animation)
+
+    //Permission
+    implementation(libs.accompanist.permissions)
+
+    //Camera
+    implementation(libs.androidx.camera.core)
+    implementation (libs.androidx.camera.camera2)
+    implementation (libs.androidx.camera.lifecycle)
+    implementation (libs.androidx.camera.video)
+
+    implementation (libs.androidx.camera.view)
+    implementation (libs.androidx.camera.extensions)
+
+    //DI
+    implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation)
+    ksp(libs.hilt.compiler)
 
     //Testing
     testImplementation(libs.junit)
