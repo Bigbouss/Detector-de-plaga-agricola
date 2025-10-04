@@ -1,0 +1,34 @@
+# -----------------------------
+# CropCare Backend - Requisitos
+# -----------------------------
+
+# --- Framework web y API ---
+Django~=5.2.6                      # Framework principal (tu versión actual 5.2.6)
+djangorestframework~=3.16.1        # API REST (compatible con Django 5.x)
+django-filter~=24.3                # Búsquedas/filtrado en DRF
+django-cors-headers~=4.9.0         # CORS para frontend/mobile
+
+# --- Autenticación (JWT) ---
+djangorestframework-simplejwt~=5.5.1  # Issuance/verify/refresh tokens
+
+# --- OpenAPI / Documentación ---
+drf-spectacular~=0.27.2            # Generación del esquema OpenAPI 3
+drf-spectacular-sidecar~=2025.9.1  # Assets de Swagger/Redoc (estáticos empaquetados)
+
+# --- Config & archivos ---
+django-environ~=0.12.0             # Variables entorno (.env) para settings
+pillow~=11.3.0                     # Imágenes (PIL)
+
+# --- Base de datos ---
+psycopg[binary]~=3.2.10            # Driver PostgreSQL (binario práctico)
+
+# --- Utilidades de Django ---
+sqlparse~=0.5.3                    # Requerido por Django en varias tareas
+typing_extensions~=4.15.0          # Compatibilidad de typing en Py3.12 (safe)
+
+# Nota:
+# - Las dependencias transitivas (jsonschema, referencing, rpds-py, uritemplate, etc.)
+#   las instalará pip automáticamente a través de drf-spectacular y otras libs.
+# - Si más adelante despliegas en servidor, puedes añadir:
+#     gunicorn>=21,<23
+#     whitenoise>=6,<7
