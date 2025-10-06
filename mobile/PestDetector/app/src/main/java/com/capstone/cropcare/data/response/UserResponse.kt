@@ -1,7 +1,7 @@
 package com.capstone.cropcare.data.response
-import com.capstone.cropcare.domain.entity.UserEntity
-import com.capstone.cropcare.domain.entity.UserType
-import com.capstone.cropcare.domain.entity.UserType.*
+import com.capstone.cropcare.domain.model.UserEntity
+import com.capstone.cropcare.domain.model.UserType
+import com.capstone.cropcare.domain.model.UserType.*
 
 data class UserResponse (
     val userId: String,

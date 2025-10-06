@@ -40,6 +40,9 @@ android {
     buildFeatures {
         compose = true
     }
+//    composeOptions {
+//        kotlinCompilerExtensionVersion = "1.5.3" // versión del compiler extension para Compose BOM 2025
+//    }
 }
 
 dependencies {
@@ -81,6 +84,17 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation)
     ksp(libs.hilt.compiler)
+
+    //ROOM
+
+    val room_version = "2.8.0"
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+
+    //RETROFIT
+    implementation(libs.retrofit)
+    implementation(libs.converter.scalars)
 
     //Testing
     testImplementation(libs.junit)

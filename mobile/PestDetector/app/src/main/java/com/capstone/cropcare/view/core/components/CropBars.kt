@@ -16,8 +16,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.capstone.cropcare.R
-import com.capstone.cropcare.ui.theme.BottomTextDisabled
-import com.capstone.cropcare.ui.theme.customBtn
+import com.capstone.cropcare.view.ui.theme.BottomTextDisabled
+import com.capstone.cropcare.view.ui.theme.customBtn
 import com.capstone.cropcare.view.core.navigation.NavItems
 
 

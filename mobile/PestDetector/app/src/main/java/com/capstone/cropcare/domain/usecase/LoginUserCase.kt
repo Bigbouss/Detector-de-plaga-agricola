@@ -1,6 +1,6 @@
 package com.capstone.cropcare.domain.usecase
 
-import com.capstone.cropcare.domain.entity.UserEntity
+import com.capstone.cropcare.domain.model.UserEntity
 import com.capstone.cropcare.domain.repository.AuthRepository
 import javax.inject.Inject
 

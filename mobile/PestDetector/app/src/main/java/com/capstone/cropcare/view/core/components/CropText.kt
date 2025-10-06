@@ -1,8 +1,10 @@
 package com.capstone.cropcare.view.core.components
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -154,6 +156,34 @@ fun CropTextCardDescription(
 
 ) {
     Text(text = text, modifier = modifier, color = color, style = style)
+}
+
+
+@Composable
+fun CropTextCardDialog(
+    modifier: Modifier = Modifier,
+    label: String,
+    value: String,
+    color: Color = MaterialTheme.colorScheme.onSurface,
+
+
+) {
+    Row(modifier = modifier) {
+        Text(
+            text = "$label ",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+            modifier = Modifier.alignByBaseline()
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            color = color,
+            modifier = Modifier.alignByBaseline()
+        )
+    }
+
 }
 
 @Composable

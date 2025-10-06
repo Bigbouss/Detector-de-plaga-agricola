@@ -1,4 +1,4 @@
-package com.capstone.cropcare.ui.theme
+package com.capstone.cropcare.view.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

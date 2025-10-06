@@ -2,7 +2,7 @@ package com.capstone.cropcare.data.repository
 
 import com.capstone.cropcare.data.response.UserResponse
 import com.capstone.cropcare.data.response.toDomain
-import com.capstone.cropcare.domain.entity.UserEntity
+import com.capstone.cropcare.domain.model.UserEntity
 import com.capstone.cropcare.domain.repository.AuthRepository
 
 class AuthRepositoryImpl: AuthRepository {

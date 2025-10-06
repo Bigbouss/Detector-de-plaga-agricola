@@ -31,6 +31,17 @@
     <!-- HOME HISTORY SCREEN -->
     <string name="home_history_list_title">History</string>
 
+    <!-- Components Dialog history-->
+    <string name="text_btn_close">Close</string>
+    <string name="history_dialog_title">Report details</string>
+    <string name="history_dialog_diagnostic">Diagnostic: </string>
+    <string name="history_dialog_zone">Zone: </string>
+    <string name="history_dialog_crop">Crop: </string>
+    <string name="history_dialog_date">Date: </string>
+    <string name="history_dialog_time">Time: </string>
+    <string name="history_dialog_photo">Photo: </string>
+    <string name="history_dialog_observation">Observation: </string>
+
     <!-- ANALYSIS REPORT SCREEN -->
     <string name="analysis_result_bad_title">Threat Detected</string>
     <string name="analysis_result_bad_description">Crop Disturbance Detected. Identified Issue: </string>
@@ -52,6 +63,11 @@
     <string name="report_card_label_observation">Observation</string>
     <string name="report_card_button">Send</string>
     <string name="report_card_placeholder_observation">Write Here…</string>
+
+
+
+
+
 
 
 

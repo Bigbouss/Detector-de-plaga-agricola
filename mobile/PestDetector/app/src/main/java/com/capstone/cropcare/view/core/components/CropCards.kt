@@ -3,6 +3,7 @@ package com.capstone.cropcare.view.core.components
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -83,7 +84,7 @@ fun CropCard(
 @Composable
 fun CropCardItemList(
     modifier: Modifier = Modifier,
-    issueTipe: String,
+    issueType: String,
     issueName: String,
     zoneName: String,
     cropName: String,
@@ -97,6 +98,7 @@ fun CropCardItemList(
             .fillMaxWidth()
             .padding(horizontal = 14.dp)
             .padding(vertical = 5.dp)
+
     ) {
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -120,8 +122,8 @@ fun CropCardItemList(
                 Row {
                     CropTextListItemDescription(text = "Diagnosis: ", fontWeight = FontWeight.SemiBold)
                     Row {
-                        CropTextListItemDescription(text = issueTipe)
-                        CropTextListItemDescription(text = "/")
+                        CropTextListItemDescription(text = issueType)
+                        CropTextListItemDescription(text = " / ")
                         CropTextListItemDescription(text = issueName)
                     }
 
@@ -131,6 +133,7 @@ fun CropCardItemList(
                     CropTextListItemDescription(text = "Ubication: ", fontWeight = FontWeight.SemiBold)
                     Row {
                         CropTextListItemDescription(text = zoneName)
+                        CropTextListItemDescription(text = " - ")
                         CropTextListItemDescription(text = cropName)
                     }
 
@@ -138,9 +141,10 @@ fun CropCardItemList(
 
 
 
-                //Spacer(modifier = Modifier.padding(vertical = 2.dp))
+
                 Row {
                     CropTextListChips(text = date)
+                    CropTextListChips(text = " ")
                     CropTextListChips(text = hour)
                 }
             }

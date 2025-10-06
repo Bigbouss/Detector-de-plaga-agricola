@@ -1,4 +1,4 @@
-package com.capstone.cropcare.ui.theme
+package com.capstone.cropcare.view.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

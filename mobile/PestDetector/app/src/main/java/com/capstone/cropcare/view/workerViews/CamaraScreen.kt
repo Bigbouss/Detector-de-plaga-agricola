@@ -31,17 +31,26 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.capstone.cropcare.R
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import java.util.concurrent.Executor
+import android.util.Log
+import androidx.compose.runtime.DisposableEffect
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraScreen(
     modifier: Modifier = Modifier,
     onPhotoTaken: (Bitmap) -> Unit = {}, // Lambda que recibe la foto
-
 ) {
     val context = LocalContext.current
     val cameraController = remember { LifecycleCameraController(context) }
     val lifecycle = LocalLifecycleOwner.current
+
+    // 👇 Limpia la cámara cuando el Composable se destruya
+    DisposableEffect(cameraController) {
+        onDispose {
+            Log.d("CameraScreen", "Liberando recursos de cámara")
+            cameraController.unbind()
+        }
+    }
 
     Scaffold(
         modifier = Modifier
@@ -65,14 +74,11 @@ fun CameraScreen(
         },
         floatingActionButtonPosition = FabPosition.Center,
     ) { paddingValues ->
-
-
         ViewCamera(
             modifier = modifier.padding(paddingValues),
             cameraController = cameraController,
             lifecycle = lifecycle
         )
-
     }
 }
 
@@ -87,26 +93,33 @@ private fun takePicture(
         object : ImageCapture.OnImageCapturedCallback() {
             override fun onCaptureSuccess(image: ImageProxy) {
                 val bitmap = image.toBitmap()
-                image.close()
+                image.close() // ✅ Ya lo tienes, muy bien
                 onPhotoTaken(bitmap)
             }
 
             override fun onError(exception: ImageCaptureException) {
-                println("Error al tomar foto: ${exception.message}")
+                Log.e("CameraScreen", "Error al tomar foto: ${exception.message}", exception)
             }
         }
     )
 }
 
 
-//VIEW CAMERA
+// VIEW CAMERA
 @Composable
 fun ViewCamera(
     modifier: Modifier = Modifier,
     cameraController: LifecycleCameraController,
     lifecycle: LifecycleOwner
 ) {
-    cameraController.bindToLifecycle(lifecycle)
+    // 👇 Vincula y desvincula automáticamente con el ciclo de vida
+    DisposableEffect(lifecycle, cameraController) {
+        cameraController.bindToLifecycle(lifecycle)
+
+        onDispose {
+            // Se limpia automáticamente al desvincular
+        }
+    }
 
     AndroidView(
         modifier = modifier,
@@ -117,6 +130,7 @@ fun ViewCamera(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 )
                 controller = cameraController
+                implementationMode = PreviewView.ImplementationMode.COMPATIBLE // 👈 Opcional: mejor compatibilidad
             }
         }
     )

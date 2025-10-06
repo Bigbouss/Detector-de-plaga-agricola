@@ -1,4 +1,4 @@
-package com.capstone.cropcare.domain.entity
+package com.capstone.cropcare.domain.model
 
 data class UserEntity (
     val userId: String,
