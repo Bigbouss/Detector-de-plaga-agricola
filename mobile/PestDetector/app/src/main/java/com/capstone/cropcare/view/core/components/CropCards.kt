@@ -27,14 +27,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.capstone.cropcare.R
 
 
 @Composable
 fun CropCard(
     modifier: Modifier = Modifier,
-    textTitle: String,
+    textTitle: String ,
     content: @Composable () -> Unit = {}
 
 
@@ -82,10 +84,33 @@ fun CropCard(
 }
 
 @Composable
+fun CropCardWeather(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit = {}
+
+) {
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(110.dp)
+            ,
+        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.tertiary),
+    ) {
+        content()
+    }
+}
+
+@Composable
 fun CropCardItemList(
     modifier: Modifier = Modifier,
     issueType: String,
-    issueName: String,
+   // issueName: String,
     zoneName: String,
     cropName: String,
     date: String,
@@ -120,18 +145,20 @@ fun CropCardItemList(
             ) {
 
                 Row {
-                    CropTextListItemDescription(text = "Diagnosis: ", fontWeight = FontWeight.SemiBold)
+                    CropTextListItemDescription(text = stringResource(R.string.home_history_card_item_diagnostic), fontWeight = FontWeight.SemiBold)
                     Row {
+                        CropTextListItemDescription(text = "  ")
                         CropTextListItemDescription(text = issueType)
-                        CropTextListItemDescription(text = " / ")
-                        CropTextListItemDescription(text = issueName)
+                        //CropTextListItemDescription(text = " / ")
+                        //CropTextListItemDescription(text = issueName)
                     }
 
                 }
 
                 Row {
-                    CropTextListItemDescription(text = "Ubication: ", fontWeight = FontWeight.SemiBold)
+                    CropTextListItemDescription(text = stringResource(R.string.home_history_card_item_ubication), fontWeight = FontWeight.SemiBold)
                     Row {
+                        CropTextListItemDescription(text = "  ")
                         CropTextListItemDescription(text = zoneName)
                         CropTextListItemDescription(text = " - ")
                         CropTextListItemDescription(text = cropName)

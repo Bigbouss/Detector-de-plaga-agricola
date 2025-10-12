@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.constraint.layout   )
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.coil.svg)
     implementation(libs.lottie.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.compose.ui.text.google.fonts)
@@ -83,6 +84,7 @@ dependencies {
     //DI
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation)
+    implementation(libs.play.services.location)
     ksp(libs.hilt.compiler)
 
     //ROOM
@@ -95,6 +97,8 @@ dependencies {
     //RETROFIT
     implementation(libs.retrofit)
     implementation(libs.converter.scalars)
+    implementation(libs.converter.gson)
+
 
     //Testing
     testImplementation(libs.junit)

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CropCare</string>
+
+    <!-- LOGIN SCREEN -->
+    <string name="log_scr_subtitle">Iniciar sesión</string>
+    <string name="log_scr_txtfield_email">correo</string>
+    <string name="log_scr_txtfield_password">contraseña</string>
+    <string name="log_scr_btn_login">Entrar</string>
+    <string name="log_scr_divider">o</string>
+    <string name="log_scr_btn_continue_google">Continuar con Google</string>
+    <string name="log_scr_txt_dont_have_account">¿No tienes cuenta? </string>
+    <string name="log_scr_text_link_register">Regístrate</string>
+
+    <!-- REGISTER SCREEN -->
+    <string name="reg_scr_subtitle">Registro</string>
+    <string name="reg_scr_txtfield_email">correo</string>
+    <string name="reg_scr_txtfield_password">contraseña</string>
+    <string name="reg_scr_btn_register">Crear cuenta</string>
+    <string name="reg_scr_txt_already_have_account">¿Ya tienes cuenta? </string>
+    <string name="reg_scr_text_link_login">Inicia sesión</string>
+
+    <!-- HOME WORKER SCREEN -->
+    <string name="home_worker_guide_card_title">Fácil de usar</string>
+    <string name="home_worker_guide_first_step">Fotografía el cultivo y espera resultados</string>
+    <string name="home_worker_guide_second_step">Si está afectado, completa el reporte</string>
+    <string name="home_worker_guide_third_step">Recibe consejos de tratamiento</string>
+    <string name="home_worker_camara_button">Tomar foto</string>
+
+    <!-- HOME HISTORY SCREEN -->
+    <string name="home_history_list_title">Historial</string>
+    <string name="home_history_empty_list">Los reportes de plagas y enfermedades aparecerán aquí</string>
+    <string name="home_history_empty_title">No hay reportes aún</string>
+    <string name="home_history_card_item_diagnostic">Diagnostico: </string>
+    <string name="home_history_card_item_ubication">Ubicación: </string>
+    <string name="home_history_dialog_title">Detalles del Reporte: </string>
+    <string name="home_history_dialog_diagnostic">Diagnostico </string>
+    <string name="home_history_dialog_zone">Zona </string>
+    <string name="home_history_dialog_crop">Cultivo </string>
+    <string name="home_history_dialog_date">Fecha </string>
+    <string name="home_history_dialog_observation">Observación: </string>
+    <string name="home_history_dialog_status_sync">Sincronizado con servidor</string>
+    <string name="home_history_dialog_status_no_sync">Pendiente de sincronización</string>
+    <string name="home_history_dialog_btn">Cerrar</string>
+
+    <!-- HOME BOTTOM BAR VIEWS -->
+    <string name="home_bottom_bar_home">Principal</string>
+    <string name="home_bottom_bar_history">Historial</string>
+
+
+
+    <!-- ANALYSIS REPORT SCREEN -->
+    <string name="analysis_result_bad_title">Amenaza detectada</string>
+    <string name="analysis_result_bad_description">Se detectó un problema en el cultivo. Tipo: </string>
+    <string name="analysis_result_report_button">Enviar reporte</string>
+    <string name="analysis_result_good_title">Cultivo saludable</string>
+    <string name="analysis_result_good_description">No se detectaron anomalías en tu cultivo.</string>
+    <string name="analysis_result_back_button">Volver al inicio</string>
+    <string name="analysis_result_try_again_title">Error de captura</string>
+    <string name="analysis_result_try_again_description">No se pudo analizar la imagen. Intenta nuevamente con mejor iluminación.</string>
+    <string name="analysis_result_try_again_button">Reintentar</string>
+
+    <!-- REPORT SCREEN -->
+    <string name="report_card_title">Reporte</string>
+    <string name="report_card_label_name">Trabajador</string>
+    <string name="report_card_label_diagnostic">Diagnóstico</string>
+    <string name="report_card_label_crop_zone">Zona de cultivo</string>
+    <string name="report_card_label_image">Foto analizada</string>
+    <string name="report_card_label_observation">Observación</string>
+    <string name="report_card_button">Enviar</string>
+    <string name="report_card_placeholder_observation">Escribe aquí…</string>
+
+    <!-- WEATHER STATES -->
+    <string name="weather_clear">Despejado</string>
+    <string name="weather_partly_cloudy">Parcialmente nublado</string>
+    <string name="weather_cloudy">Nublado</string>
+    <string name="weather_very_cloudy">Muy nublado</string>
+    <string name="weather_light_rain">Lluvia ligera</string>
+    <string name="weather_rain">Lluvia</string>
+    <string name="weather_storm">Tormenta</string>
+    <string name="weather_snow">Nieve</string>
+    <string name="weather_fog">Niebla</string>
+</resources>

@@ -6,11 +6,10 @@ import com.capstone.cropcare.domain.repository.ReportRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-// domain/usecase/GetReportHistoryUseCase.kt
 class GetReportHistoryUseCase@Inject constructor(
     private val repository: ReportRepository
 ) {
     operator fun invoke(): Flow<List<ReportModel>> {
-        return repository.getAllReport()
+        return repository.getAllReports()
     }
 }

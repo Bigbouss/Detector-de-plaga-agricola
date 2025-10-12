@@ -30,7 +30,7 @@ fun NavigationWrapper(modifier: Modifier = Modifier) {
     NavHost(
         navController = navController,
         //startDestination = Splash
-        startDestination = HomeHistory
+        startDestination = HomeWorker
     ) {
 
         composable<Splash> {
@@ -119,29 +119,11 @@ fun NavigationWrapper(modifier: Modifier = Modifier) {
             val analysisViewModel: AnalysisViewModel = hiltViewModel(parentEntry)
             val reportViewModel: ReportViewModel = hiltViewModel()
 
-            // Inicializa los datos del reporte con la foto del análisis
-            LaunchedEffect(Unit) {
-                val tempBitmap = analysisViewModel.tempBitmap.value
-                val savedPath = analysisViewModel.savedImagePath.value
-
-                Log.d("ReportScreen", "Bitmap: $tempBitmap, Path: $savedPath")
-
-                if (tempBitmap != null) {
-                    reportViewModel.setAnalizedPhoto(tempBitmap)
-                }
-                if (savedPath != null) {
-                    reportViewModel.setLocalPhotoPath(savedPath)
-                }
-
-                // También puedes setear el diagnóstico aquí
-                reportViewModel.setDiagnostic("Plaga detectada") // O lo que corresponda
-                reportViewModel.setWorkerName("Usuario actual") // Debes obtener el nombre real
-            }
-
             ReportScreenWorker(
                 reportViewModel = reportViewModel,
+                analysisViewModel = analysisViewModel,
                 backToHome = {
-                    analysisViewModel.clearTemporaryImage() // Limpia la imagen temporal
+                    analysisViewModel.clearTemporaryImage()
                     analysisViewModel.reset()
                     navController.navigate(HomeWorker) {
                         popUpTo(HomeWorker) { inclusive = false }

@@ -28,19 +28,32 @@
     <string name="home_worker_guide_third_step">Get treatment advice</string>
     <string name="home_worker_camara_button">Take a photo</string>
 
+    <!-- HOME BOTTOM BAR VIEWS -->
+    <string name="home_bottom_bar_home">Home</string>
+    <string name="home_bottom_bar_history">History</string>
+
+
+
     <!-- HOME HISTORY SCREEN -->
     <string name="home_history_list_title">History</string>
+    <string name="home_history_empty_title">No reports yet</string>
+    <string name="home_history_empty_list">Pest and disease reports will appear here</string>
+    <string name="home_history_card_item_diagnostic">Diagnostic: </string>
+    <string name="home_history_card_item_ubication">Ubication: </string>
+    <string name="home_history_dialog_title">Report details: </string>
+    <string name="home_history_dialog_diagnostic">Diagnostic </string>
+    <string name="home_history_dialog_zone">Zone </string>
+    <string name="home_history_dialog_crop">Crop </string>
+    <string name="home_history_dialog_date">Date </string>
+    <string name="home_history_dialog_observation">Observation: </string>
+    <string name="home_history_dialog_status_sync">synced with server </string>
+    <string name="home_history_dialog_status_no_sync">pending sync</string>
+    <string name="home_history_dialog_btn">Close</string>
 
-    <!-- Components Dialog history-->
-    <string name="text_btn_close">Close</string>
-    <string name="history_dialog_title">Report details</string>
-    <string name="history_dialog_diagnostic">Diagnostic: </string>
-    <string name="history_dialog_zone">Zone: </string>
-    <string name="history_dialog_crop">Crop: </string>
-    <string name="history_dialog_date">Date: </string>
-    <string name="history_dialog_time">Time: </string>
-    <string name="history_dialog_photo">Photo: </string>
-    <string name="history_dialog_observation">Observation: </string>
+
+
+
+
 
     <!-- ANALYSIS REPORT SCREEN -->
     <string name="analysis_result_bad_title">Threat Detected</string>
@@ -63,6 +76,17 @@
     <string name="report_card_label_observation">Observation</string>
     <string name="report_card_button">Send</string>
     <string name="report_card_placeholder_observation">Write Here…</string>
+
+    <!-- Weather States -->
+    <string name="weather_clear">Clear sky</string>
+    <string name="weather_partly_cloudy">Partly cloudy</string>
+    <string name="weather_cloudy">Cloudy</string>
+    <string name="weather_very_cloudy">Overcast</string>
+    <string name="weather_light_rain">Light rain</string>
+    <string name="weather_rain">Rain</string>
+    <string name="weather_storm">Storm</string>
+    <string name="weather_snow">Snow</string>
+    <string name="weather_fog">Fog</string>
 
 
 

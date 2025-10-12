@@ -1,6 +1,7 @@
 package com.capstone.cropcare.view.workerViews
 
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.view.ViewGroup
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -38,13 +39,13 @@ import androidx.compose.runtime.DisposableEffect
 @Composable
 fun CameraScreen(
     modifier: Modifier = Modifier,
-    onPhotoTaken: (Bitmap) -> Unit = {}, // Lambda que recibe la foto
+    onPhotoTaken: (Bitmap) -> Unit = {},
 ) {
     val context = LocalContext.current
     val cameraController = remember { LifecycleCameraController(context) }
     val lifecycle = LocalLifecycleOwner.current
 
-    // 👇 Limpia la cámara cuando el Composable se destruya
+    //Limpiar la cámara cuando el Composable se destruya
     DisposableEffect(cameraController) {
         onDispose {
             Log.d("CameraScreen", "Liberando recursos de cámara")
@@ -92,8 +93,9 @@ private fun takePicture(
         executor,
         object : ImageCapture.OnImageCapturedCallback() {
             override fun onCaptureSuccess(image: ImageProxy) {
-                val bitmap = image.toBitmap()
-                image.close() // ✅ Ya lo tienes, muy bien
+                val rotationDegrees = image.imageInfo.rotationDegrees
+                val bitmap = image.toBitmap().rotateBitmap(rotationDegrees)
+                image.close()
                 onPhotoTaken(bitmap)
             }
 
@@ -105,6 +107,7 @@ private fun takePicture(
 }
 
 
+
 // VIEW CAMERA
 @Composable
 fun ViewCamera(
@@ -112,7 +115,7 @@ fun ViewCamera(
     cameraController: LifecycleCameraController,
     lifecycle: LifecycleOwner
 ) {
-    // 👇 Vincula y desvincula automáticamente con el ciclo de vida
+    // Vincula y desvincula automáticamente con el ciclo de vida
     DisposableEffect(lifecycle, cameraController) {
         cameraController.bindToLifecycle(lifecycle)
 
@@ -130,8 +133,15 @@ fun ViewCamera(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 )
                 controller = cameraController
-                implementationMode = PreviewView.ImplementationMode.COMPATIBLE // 👈 Opcional: mejor compatibilidad
+                implementationMode = PreviewView.ImplementationMode.COMPATIBLE
             }
         }
     )
+}
+
+fun Bitmap.rotateBitmap(degrees: Int): Bitmap {
+    if (degrees == 0) return this
+    val matrix = Matrix()
+    matrix.postRotate(degrees.toFloat())
+    return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
 }

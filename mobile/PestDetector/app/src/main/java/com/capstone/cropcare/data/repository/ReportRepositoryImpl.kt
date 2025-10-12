@@ -1,40 +1,47 @@
 package com.capstone.cropcare.data.repository
 
 import com.capstone.cropcare.data.local.dao.ReportDao
+import com.capstone.cropcare.domain.mappers.toDomain
 import com.capstone.cropcare.domain.mappers.toEntity
-import com.capstone.cropcare.domain.mappers.toModel
 import com.capstone.cropcare.domain.model.ReportModel
 import com.capstone.cropcare.domain.repository.ReportRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import javax.inject.Singleton
 
-class ReportRepositoryImpl @Inject constructor(private val reportDao: ReportDao) :
-    ReportRepository {
-    override suspend fun insertReport(report: ReportModel) {
-        reportDao.insert(report.toEntity())
+@Singleton
+class ReportRepositoryImpl @Inject constructor(
+    private val reportDao: ReportDao
+) : ReportRepository {
+
+    override suspend fun insertReport(report: ReportModel): Long {
+        return reportDao.insertReport(report.toEntity())
     }
 
     override suspend fun updateReport(report: ReportModel) {
-        reportDao.update(report.toEntity())
+        reportDao.updateReport(report.toEntity())
     }
 
     override suspend fun deleteReport(report: ReportModel) {
-        reportDao.delete(report.toEntity())
+        reportDao.deleteReport(report.toEntity())
     }
 
-    override fun getAllReport(): Flow<List<ReportModel>> {
-        return reportDao.getAllReportsFlow().map { list -> list.map { it.toModel() } }
-    }
-
-    override fun getReportById(id: Int): Flow<ReportModel?> =
-        reportDao.getReportByIdFlow(id).map {
-            it?.toModel()
+    override fun getAllReports(): Flow<List<ReportModel>> {
+        return reportDao.getAllReportsWithDetails().map { reportsWithDetails ->
+            reportsWithDetails.mapNotNull { it.toDomain() }
         }
+    }
 
+    override suspend fun getReportById(id: Int): ReportModel? {
+        return reportDao.getReportWithDetails(id)?.toDomain()
+    }
 
-    override fun getReportBetween(from: Long, to: Long): Flow<List<ReportModel>> {
-        return reportDao.getBetween(from, to).map { list -> list.map { it.toModel() } }
+    override suspend fun getUnsyncedReports(): List<ReportModel> {
+        return reportDao.getUnsyncedReports().map { it.toDomain() }
+    }
+
+    override suspend fun markAsSynced(reportId: Int) {
+        reportDao.markAsSynced(reportId)
     }
 }
