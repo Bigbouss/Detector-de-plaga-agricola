@@ -6,7 +6,7 @@ import coil3.svg.SvgDecoder
 import com.capstone.cropcare.data.remote.api.WeatherApiService
 import com.capstone.cropcare.data.repository.WeatherRepositoryImpl
 import com.capstone.cropcare.domain.repository.WeatherRepository
-import com.capstone.cropcare.domain.usecase.GetWeatherUseCase
+import com.capstone.cropcare.domain.usecase.weatherUseCase.GetWeatherUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

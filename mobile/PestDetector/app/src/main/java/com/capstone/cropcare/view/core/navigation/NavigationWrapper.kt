@@ -1,26 +1,18 @@
 package com.capstone.cropcare.view.core.navigation
 
-import android.graphics.Bitmap
-import android.util.Log
+
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.capstone.cropcare.view.adminViews.invitationManagement.InvitationManagementScreen
 import com.capstone.cropcare.view.auth.other.SplashScreen
 import com.capstone.cropcare.view.auth.login.LoginScreen
-import com.capstone.cropcare.view.auth.register.RegisterScreen
-import com.capstone.cropcare.view.workerViews.CameraScreen
-import com.capstone.cropcare.view.workerViews.analysisResult.AnalysisScreen
-import com.capstone.cropcare.view.workerViews.analysisResult.AnalysisViewModel
-import com.capstone.cropcare.view.workerViews.homeHistory.HomeHistoryScreen
-import com.capstone.cropcare.view.workerViews.home.HomeWorkerScreen
-import com.capstone.cropcare.view.workerViews.reports.ReportScreenWorker
-import com.capstone.cropcare.view.workerViews.reports.ReportViewModel
+import com.capstone.cropcare.view.auth.register.admin.RegisterAdminScreen
+import com.capstone.cropcare.view.auth.register.worker.RegisterWorkerScreen
+
 
 
 @Composable
@@ -29,107 +21,90 @@ fun NavigationWrapper(modifier: Modifier = Modifier) {
 
     NavHost(
         navController = navController,
-        //startDestination = Splash
-        startDestination = HomeWorker
+        startDestination = Splash
+        //startDestination = AdminFlow
+
     ) {
-
+        // ========== SPLASH SCREEN ==========
         composable<Splash> {
-            SplashScreen(navigateToLogin = {
-                navController.navigate(Login) {
-                    popUpTo(Splash) { inclusive = true } //EVITAR APILAMIENTO
+            SplashScreen(
+                navigateToLogin = {
+                    navController.navigate(Login) {
+                        popUpTo(Splash) { inclusive = true }
+                    }
+                },
+                navigateToWorkerHome = {
+                    navController.navigate(WorkerFlow) {
+                        popUpTo(Splash) { inclusive = true }
+                    }
+                },
+                navigateToAdminHome = {
+                    navController.navigate(AdminFlow) {
+                        popUpTo(Splash) { inclusive = true }
+                    }
                 }
-            })
+            )
         }
 
+
+        // ========== AUTH FLOW ==========
         composable<Login> {
-            LoginScreen(navigateToRegister = { navController.navigate(Register) })
-        }
-
-        composable<Register> {
-            RegisterScreen(navigateBack = { navController.popBackStack() })
-        }
-
-        composable<HomeWorker> {
-            HomeWorkerScreen(
-                navigateToHistory = {
-                    navController.navigate(HomeHistory) {
-                        popUpTo(HomeWorker) { inclusive = true }
+            LoginScreen(
+                navigateToRegisterAdmin = {
+                    navController.navigate(RegisterAdmin)
+                },
+                navigateToRegisterWorker = {
+                    navController.navigate(RegisterWorker)
+                },
+                navigateToAdminHome = { // 👈 Nuevo
+                    navController.navigate(AdminFlow) {
+                        popUpTo(Login) { inclusive = true }
                     }
                 },
-                navigateToCamera = { navController.navigate(CamaraScreen) },
-
-
-                )
-        }
-        composable<CamaraScreen> { backStackEntry ->
-            // Obtén una "ruta padre" común - puede ser cualquier ruta que englobe ambas pantallas
-            // Si HomeWorker es tu pantalla anterior, usa esa:
-            val parentEntry = remember(backStackEntry) {
-                navController.getBackStackEntry(HomeWorker::class)
-            }
-
-            val analysisViewModel: AnalysisViewModel = hiltViewModel(parentEntry)
-
-            CameraScreen(
-                onPhotoTaken = { bitmap ->
-                    analysisViewModel.analyzePhoto(bitmap)
-                    navController.navigate(AnalysisResultScreen)
+                navigateToWorkerHome = { // 👈 Nuevo
+                    navController.navigate(WorkerFlow) {
+                        popUpTo(Login) { inclusive = true }
+                    }
                 }
             )
         }
 
-        composable<AnalysisResultScreen> { backStackEntry ->
-            val parentEntry = remember(backStackEntry) {
-                navController.getBackStackEntry(HomeWorker::class)
-            }
-
-            val analysisViewModel: AnalysisViewModel = hiltViewModel(parentEntry)
-
-            AnalysisScreen(
-                analysisViewModel = analysisViewModel,
-                navigateToReport = { navController.navigate(ReportScreen) },
-                backToHome = {
-                    analysisViewModel.reset()
-                    navController.navigate(HomeWorker)
-                },
-                backToCamera = {
-                    analysisViewModel.reset()
+        composable<RegisterAdmin> {
+            RegisterAdminScreen(
+                navigateBack = {
                     navController.popBackStack()
-                }
-            )
-        }
-
-
-
-        composable<HomeHistory> {
-            HomeHistoryScreen(navigateToHome = {
-                navController.navigate(HomeWorker) {
-                    popUpTo(HomeHistory) { inclusive = true }
-                }
-            })
-        }
-
-
-
-        composable<ReportScreen> {
-            val parentEntry = remember(it) {
-                navController.getBackStackEntry(HomeWorker::class)
-            }
-
-            val analysisViewModel: AnalysisViewModel = hiltViewModel(parentEntry)
-            val reportViewModel: ReportViewModel = hiltViewModel()
-
-            ReportScreenWorker(
-                reportViewModel = reportViewModel,
-                analysisViewModel = analysisViewModel,
-                backToHome = {
-                    analysisViewModel.clearTemporaryImage()
-                    analysisViewModel.reset()
-                    navController.navigate(HomeWorker) {
-                        popUpTo(HomeWorker) { inclusive = false }
+                },
+                navigateToHome = {
+                    navController.navigate(AdminFlow) {
+                        popUpTo(RegisterAdmin) { inclusive = true }
                     }
                 }
             )
         }
+
+        composable<RegisterWorker> {
+            RegisterWorkerScreen(
+                navigateBack = {
+                    navController.popBackStack()
+                },
+                navigateToHome = {
+                    navController.navigate(WorkerFlow) {
+                        popUpTo(RegisterWorker) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // ========== WORKER FLOW ==========
+        composable <WorkerFlow>{
+            FlowWorkerNavigation()
+        }
+
+        // ========== ADMIN FLOW ==========
+        composable<AdminFlow> {
+            FlowAdminNavigation()
+        }
+
+
     }
 }

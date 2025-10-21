@@ -36,7 +36,7 @@ import com.capstone.cropcare.R
 @Composable
 fun CropCard(
     modifier: Modifier = Modifier,
-    textTitle: String ,
+    textTitle: String,
     content: @Composable () -> Unit = {}
 
 
@@ -69,6 +69,70 @@ fun CropCard(
                     color = MaterialTheme.colorScheme.primary,
                     thickness = 1.dp
                 )
+                Spacer(Modifier.height(5.dp))
+            }
+
+
+
+            content()
+
+
+        }
+
+
+    }
+
+}
+
+
+@Composable
+fun CropCardAdmin(
+    modifier: Modifier = Modifier,
+    textTitle: String,
+    iconCard: Int,
+    iconAction: () -> Unit,
+    content: @Composable () -> Unit = {},
+
+
+
+) {
+
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(5.dp),
+        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.tertiary),
+    ) {
+
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 15.dp)
+            ) {
+                Row(Modifier.padding(end = 10.dp)) {
+                    CropTextCardTitleAnalysisVersion(text = textTitle)
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(
+                        painter = painterResource(iconCard),
+                        contentDescription = "add worker by code",
+                        modifier = Modifier.clickable(onClick = {iconAction()}))
+
+                }
+                Spacer(Modifier.height(8.dp))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.primary,
+                    thickness = 1.dp
+                )
+                Spacer(Modifier.height(5.dp))
             }
 
 
@@ -93,8 +157,7 @@ fun CropCardWeather(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(110.dp)
-            ,
+            .height(110.dp),
         shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
         colors = CardDefaults.cardColors(
@@ -110,7 +173,7 @@ fun CropCardWeather(
 fun CropCardItemList(
     modifier: Modifier = Modifier,
     issueType: String,
-   // issueName: String,
+    // issueName: String,
     zoneName: String,
     cropName: String,
     date: String,
@@ -145,7 +208,10 @@ fun CropCardItemList(
             ) {
 
                 Row {
-                    CropTextListItemDescription(text = stringResource(R.string.home_history_card_item_diagnostic), fontWeight = FontWeight.SemiBold)
+                    CropTextListItemDescription(
+                        text = stringResource(R.string.home_history_card_item_diagnostic),
+                        fontWeight = FontWeight.SemiBold
+                    )
                     Row {
                         CropTextListItemDescription(text = "  ")
                         CropTextListItemDescription(text = issueType)
@@ -156,7 +222,10 @@ fun CropCardItemList(
                 }
 
                 Row {
-                    CropTextListItemDescription(text = stringResource(R.string.home_history_card_item_ubication), fontWeight = FontWeight.SemiBold)
+                    CropTextListItemDescription(
+                        text = stringResource(R.string.home_history_card_item_ubication),
+                        fontWeight = FontWeight.SemiBold
+                    )
                     Row {
                         CropTextListItemDescription(text = "  ")
                         CropTextListItemDescription(text = zoneName)
@@ -182,6 +251,64 @@ fun CropCardItemList(
 }
 
 @Composable
+fun CropCardItemListWorker(
+    modifier: Modifier = Modifier,
+    nameWorker: String,
+    emailWorker: String,
+
+
+    ) {
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp)
+            .padding(vertical = 5.dp)
+
+    ) {
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(end = 10.dp)
+            ) {
+            Box(
+                modifier = Modifier
+                    .padding(10.dp)
+                    .size(50.dp)
+                    .clip(CircleShape)
+                    .background(Color.Red)
+
+
+            ) {}
+
+            Spacer(Modifier.width(15.dp))
+            Column(
+                modifier = Modifier.padding(vertical = 5.dp),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Center
+            ) {
+
+                CropTextListItemDescription(text = nameWorker)
+                Spacer(Modifier.height(8.dp))
+                CropTextListChips(text = emailWorker)
+            }
+            Spacer(modifier = Modifier.weight(1f))
+
+            Icon(
+                painter = painterResource(R.drawable.ic_options_list),
+                contentDescription = null
+            )
+
+
+        }
+
+    }
+}
+
+
+@Composable
 fun AnalysisResultCard(
     title: String,
     description: String,
@@ -190,14 +317,15 @@ fun AnalysisResultCard(
     onButtonClick: () -> Unit = {},
     tint: Color,
 ) {
-    CropCard(textTitle = title, modifier = Modifier
-        .height(550.dp)
-        .padding(horizontal = 15.dp)) {
+    CropCard(
+        textTitle = title, modifier = Modifier
+            .height(550.dp)
+            .padding(horizontal = 15.dp)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
-                ,
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         )
         {

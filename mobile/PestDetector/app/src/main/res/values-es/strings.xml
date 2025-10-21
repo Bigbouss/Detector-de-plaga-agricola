@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">CropCare</string>
+    <string name="press_again_to_exit">Vuelve hacer para salir</string>
 
     <!-- LOGIN SCREEN -->
     <string name="log_scr_subtitle">Iniciar sesión</string>
@@ -47,6 +48,10 @@
     <string name="home_bottom_bar_home">Principal</string>
     <string name="home_bottom_bar_history">Historial</string>
 
+    <string name="home_admin_bottom_bar_zones">Zonas</string>
+    <string name="home_admin_bottom_bar_reports">Reportes</string>
+    <string name="home_admin_bottom_bar_metrics">Metricas</string>
+
 
 
     <!-- ANALYSIS REPORT SCREEN -->
@@ -80,4 +85,9 @@
     <string name="weather_storm">Tormenta</string>
     <string name="weather_snow">Nieve</string>
     <string name="weather_fog">Niebla</string>
+
+    <!-- ADMIN SCREENS -->
+    <!-- HOME SCREEN -->
+    <string name="admin_home_screen_card_title">Trabajadores</string>
+
 </resources>

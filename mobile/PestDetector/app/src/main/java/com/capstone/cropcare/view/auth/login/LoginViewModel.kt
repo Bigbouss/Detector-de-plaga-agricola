@@ -2,55 +2,91 @@ package com.capstone.cropcare.view.auth.login
 
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
-import com.capstone.cropcare.domain.usecase.LoginUserCase
+import androidx.lifecycle.viewModelScope
+import com.capstone.cropcare.domain.model.UserModel
+import com.capstone.cropcare.domain.usecase.authUseCase.login.LoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/*******************************************************************************************
- * _uiState es privado y mutable: solo el ViewModel puede modificarlo.                     *
- * uiState es público y de solo lectura: las vistas/composables lo observan.               *
- * esto hace qye no pueden cambiar su valor directamente (uiState).                        *
- * De esta forma, la lógica de actualización de estado queda centralizada en el ViewModel  *
- *******************************************************************************************/
-
 @HiltViewModel
-class LoginViewModel @Inject constructor (val login: LoginUserCase): ViewModel() {
-    private val _uiState = MutableStateFlow(LoginUiState())
-    val uiState: StateFlow<LoginUiState> = _uiState
+class LoginViewModel @Inject constructor(
+    private val loginUseCase: LoginUseCase
+) : ViewModel() {
 
-    fun onEmailChanged(email: String){
-        _uiState.update { state ->
-            state.copy(email = email)
-        }
-        LoginValidation()
+    private val _uiState = MutableStateFlow(LoginState())
+    val uiState: StateFlow<LoginState> = _uiState.asStateFlow()
+
+    fun onEmailChanged(email: String) {
+        _uiState.update { it.copy(email = email) }
+        validateForm()
     }
 
-    fun onPasswordChanged(password: String){
-        _uiState.update { state ->
-            state.copy(password = password)
-        }
-        LoginValidation()
+    fun onPasswordChanged(password: String) {
+        _uiState.update { it.copy(password = password) }
+        validateForm()
     }
 
-    private fun LoginValidation(){
-        val isEnabledLogin: Boolean = isEmailValid(_uiState.value.email) && isPasswordValid(_uiState.value.password)
+    private fun validateForm() {
+        val email = _uiState.value.email
+        val password = _uiState.value.password
+
+        val isValidEmail = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        val isValidPassword = password.length >= 6
 
         _uiState.update {
-            it.copy(isLoginEnable = isEnabledLogin)
+            it.copy(isLoginEnabled = isValidEmail && isValidPassword)
         }
     }
 
-    //VALIDATION FUNCTION
-    fun isEmailValid(email: String): Boolean = Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    fun isPasswordValid(password: String): Boolean = password.length>= 6
+    fun login() {
+        if (!_uiState.value.isLoginEnabled) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+
+            val result = loginUseCase(
+                email = _uiState.value.email.trim(),
+                password = _uiState.value.password
+            )
+
+            result.fold(
+                onSuccess = { user ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            loginSuccess = true,
+                            user = user // 👈 Guardamos el user
+                        )
+                    }
+                },
+                onFailure = { exception ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = exception.message ?: "Error al iniciar sesión"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
+    }
 }
 
-data class LoginUiState(
+data class LoginState(
     val email: String = "",
     val password: String = "",
+    val isLoginEnabled: Boolean = false,
     val isLoading: Boolean = false,
-    val isLoginEnable: Boolean = false,
+    val loginSuccess: Boolean = false,
+    val user: UserModel? = null, // 👈 Usuario logueado
+    val error: String? = null
 )

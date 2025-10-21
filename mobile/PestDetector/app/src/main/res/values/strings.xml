@@ -2,6 +2,7 @@
 <resources>
 
     <string name="app_name">CropCare</string>
+    <string name="press_again_to_exit">Press again to exit</string>
 
     <!-- LOGIN SCREEN -->
     <string name="log_scr_subtitle">Login</string>
@@ -32,6 +33,12 @@
     <string name="home_bottom_bar_home">Home</string>
     <string name="home_bottom_bar_history">History</string>
 
+    <string name="home_admin_bottom_bar_zones">Zones</string>
+    <string name="home_admin_bottom_bar_reports">Reports</string>
+    <string name="home_admin_bottom_bar_metrics">Metrics</string>
+
+
+
 
 
     <!-- HOME HISTORY SCREEN -->
@@ -49,10 +56,6 @@
     <string name="home_history_dialog_status_sync">synced with server </string>
     <string name="home_history_dialog_status_no_sync">pending sync</string>
     <string name="home_history_dialog_btn">Close</string>
-
-
-
-
 
 
     <!-- ANALYSIS REPORT SCREEN -->
@@ -87,6 +90,11 @@
     <string name="weather_storm">Storm</string>
     <string name="weather_snow">Snow</string>
     <string name="weather_fog">Fog</string>
+
+    <!-- ADMIN SCREENS -->
+    <!-- HOME SCREEN -->
+    <string name="admin_home_screen_card_title">Workers</string>
+
 
 
 

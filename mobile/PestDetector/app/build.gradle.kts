@@ -88,7 +88,6 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     //ROOM
-
     val room_version = "2.8.0"
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
@@ -99,6 +98,8 @@ dependencies {
     implementation(libs.converter.scalars)
     implementation(libs.converter.gson)
 
+    //DATAPREFERENCE
+    implementation(libs.androidx.datastore.preferences)
 
     //Testing
     testImplementation(libs.junit)

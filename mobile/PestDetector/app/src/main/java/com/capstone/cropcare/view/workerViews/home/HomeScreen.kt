@@ -68,7 +68,7 @@ import kotlin.collections.listOf
 @Composable
 fun HomeWorkerScreen(
     homeViewModel: HomeViewModel = hiltViewModel(),
-    navigateToHistory: () -> Unit,
+    //navigateToHistory: () -> Unit,
     navigateToCamera: () -> Unit,
 
     ) {
@@ -108,23 +108,27 @@ fun HomeWorkerScreen(
     }
 
 
-    Scaffold(
-        topBar = { CropTopAppBar() },
-        bottomBar = {
-            CropBottomBar(
-                itemList = listOf(
-                    NavItems(stringResource(R.string.home_bottom_bar_home), R.drawable.ic_home, onClick = {}),
-                    NavItems(stringResource(R.string.home_bottom_bar_history), R.drawable.ic_history, onClick = { navigateToHistory() })
-                ), selectedIndex = 0, onItemSelected = {}
-            )
-        })
-
-    { paddingValues ->
+//    Scaffold(
+//        topBar = { CropTopAppBar() },
+//        bottomBar = {
+//            CropBottomBar(
+//                itemList = listOf(
+//                    NavItems(stringResource(R.string.home_bottom_bar_home), R.drawable.ic_home
+//                       // , onClick = {}
+//                    ),
+//                    NavItems(stringResource(R.string.home_bottom_bar_history), R.drawable.ic_history,
+//                      //  onClick = { navigateToHistory() }
+//                    )
+//                ), selectedIndex = 0, onItemSelected = {}
+//            )
+//        })
+//
+//    { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(paddingValues)
+               //.padding(paddingValues)
         ) {
             Column(
                 modifier = Modifier
@@ -357,7 +361,7 @@ fun HomeWorkerScreen(
             }
         }
     }
-}
+//}
 
 
 

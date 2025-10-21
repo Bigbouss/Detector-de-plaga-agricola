@@ -2,7 +2,7 @@ package com.capstone.cropcare.view.core.navigation
 
 import kotlinx.serialization.Serializable
 
-//Definir Screens para navigation.
+// ----- Screens generales  ----- //
 
 @Serializable
 object Splash
@@ -10,8 +10,16 @@ object Splash
 @Serializable
 object Login
 
+
+
+// ----- Screens para trabajador ----- //
+
 @Serializable
-object Register
+object RegisterWorker
+
+@Serializable
+object WorkerFlow
+
 
 @Serializable
 object HomeWorker
@@ -27,3 +35,25 @@ object AnalysisResultScreen
 
 @Serializable
 object ReportScreen
+
+// ----- Screens para administrador -----
+@Serializable
+object RegisterAdmin
+
+@Serializable
+object AdminFlow
+
+@Serializable
+object HomeAdmin
+
+@Serializable
+object ZoneManagement
+
+@Serializable
+object ReportManagement
+
+@Serializable
+object MetricsAdmin
+
+@Serializable
+object InvitationManagement

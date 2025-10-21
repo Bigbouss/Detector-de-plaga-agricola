@@ -63,11 +63,11 @@ fun CropBottomBar(
                 isSelected = index == selectedIndex
             ) {
                 onItemSelected(index)
-                item.onClick()
             }
         }
     }
 }
+
 @Composable
 fun RowScope.ItemsNavMenu(navItem: NavItems, isSelected: Boolean, onItemClick: () -> Unit) {
     NavigationBarItem(
@@ -88,3 +88,26 @@ fun RowScope.ItemsNavMenu(navItem: NavItems, isSelected: Boolean, onItemClick: (
         label = { CropTextLabels(navItem.name) },
         alwaysShowLabel = false)
 }
+
+//@Composable
+//fun CropBottomBar(
+//    itemList: List<NavItems>,
+//    selectedIndex: Int,
+//    onItemSelected: (Int) -> Unit
+//) {
+//    NavigationBar(
+//        containerColor = customBtn,
+//        contentColor = Color.White,
+//        tonalElevation = 10.dp
+//    ) {
+//        itemList.forEachIndexed { index, item ->
+//            ItemsNavMenu(
+//                navItem = item,
+//                isSelected = index == selectedIndex
+//            ) {
+//                onItemSelected(index)
+//                item.onClick()
+//            }
+//        }
+//    }
+//}

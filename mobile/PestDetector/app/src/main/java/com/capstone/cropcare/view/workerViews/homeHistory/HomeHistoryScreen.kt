@@ -52,27 +52,31 @@ import kotlin.collections.listOf
 @Composable
 fun HomeHistoryScreen(
     homeHistoryViewModel: HistoryViewModel = hiltViewModel(),
-    navigateToHome: () -> Unit,
+    //navigateToHome: () -> Unit,
 ) {
     val reports by homeHistoryViewModel.reports.collectAsState()
     var selectedReport by remember { mutableStateOf<ReportModel?>(null) }
 
-    Scaffold(
-        topBar = { CropTopAppBar() },
-        bottomBar = {
-            CropBottomBar(
-                itemList = listOf(
-                    NavItems(stringResource(R.string.home_bottom_bar_home), R.drawable.ic_home, onClick = { navigateToHome() }),
-                    NavItems(stringResource(R.string.home_bottom_bar_history), R.drawable.ic_history, onClick = {})
-                ),
-                selectedIndex = 1,
-                onItemSelected = {}
-            )
-        }
-    ) { paddingValues ->
+//    Scaffold(
+//        topBar = { CropTopAppBar() },
+//        bottomBar = {
+//            CropBottomBar(
+//                itemList = listOf(
+//                    NavItems(stringResource(R.string.home_bottom_bar_home), R.drawable.ic_home,
+//                        //onClick = { navigateToHome() }
+//                    ),
+//                    NavItems(stringResource(R.string.home_bottom_bar_history), R.drawable.ic_history,
+//                        //onClick = {}
+//                    )
+//                ),
+//                selectedIndex = 1,
+//                onItemSelected = {}
+//            )
+//        }
+//    ) { paddingValues ->
         Column(
             modifier = Modifier
-                .padding(paddingValues)
+                //.padding(paddingValues)
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
@@ -141,7 +145,7 @@ fun HomeHistoryScreen(
             )
         }
     }
-}
+//}
 
 
 
