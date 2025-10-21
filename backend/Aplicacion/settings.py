@@ -12,31 +12,33 @@ Incluye:
 from pathlib import Path
 import os
 from datetime import timedelta
-
+import environ
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "contraseña"
-DEBUG = True
-ALLOWED_HOSTS = ["*"]
+env = environ.Env(
+    DEBUG=(bool, True),
+)
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
+SECRET_KEY = env("SECRET_KEY", default="abcd1234")
+DEBUG = env.bool("DEBUG", default=True)
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
 
 # Apps de Django
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-
-    # Terceros
-    "rest_framework",
-    "rest_framework.authtoken",
-    "rest_framework_simplejwt",
-    "drf_spectacular",
-    "django_filters",
-
-    # app
-    "api",
+    # Apps de Django
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    # Apps de terceros
+    'rest_framework',
+    'rest_framework_simplejwt',
+    # Apps del proyecto CropCare
+    'cropcare_orgs',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -73,15 +75,18 @@ WSGI_APPLICATION = "Aplicacion.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "cropcare"),
-        "USER": os.getenv("POSTGRES_USER", "cropcare"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", ""),
-        "HOST": os.getenv("POSTGRES_HOST", "localhost"),
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        "NAME": env("POSTGRES_DB", default="cropcare"),
+        "USER": env("POSTGRES_USER", default="cropcare"),
+        "PASSWORD": env("POSTGRES_PASSWORD"),
+        "HOST": env("POSTGRES_HOST", default="127.0.0.1"),
+        "PORT": env("POSTGRES_PORT", default="5432"),
+        "ATOMIC_REQUESTS": True,
+        # Opcional: mantener conexiones abiertas (segundos)
+        # "CONN_MAX_AGE": env.int("POSTGRES_CONN_MAX_AGE", default=60),
     }
 }
 
-# Validadores de contraseña (útiles si no usas superusuario)
+# Validadores de contraseña
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 8}},
@@ -105,28 +110,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # DRF: auth, paginación, filtros, schema
 REST_FRAMEWORK = {
-    # Autenticación: JWT + Session para el navegador/Admin
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
-    ),
-    # Permisos: por defecto autenticado; endpoints públicos lo sobrescriben
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
-    ),
-    # Paginación por defecto (20 por página)
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 20,
-    # Filtros/búsqueda/orden
-    "DEFAULT_FILTER_BACKENDS": (
-        "django_filters.rest_framework.DjangoFilterBackend",
-        "rest_framework.filters.SearchFilter",
-        "rest_framework.filters.OrderingFilter",
-    ),
-    # OpenAPI con DRF Spectacular
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    # Manejo uniforme de errores
-    "EXCEPTION_HANDLER": "api.exceptions.custom_exception_handler",
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
 
 # DRF Spectacular (OpenAPI/Swagger)
@@ -140,7 +129,10 @@ SPECTACULAR_SETTINGS = {
 
 # SimpleJWT
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "AUTH_HEADER_TYPES": ("Bearer",),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),  # token corto para llamadas
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),     # token largo para renovar access
+    "ROTATE_REFRESH_TOKENS": True,                   # al refrescar, emite nuevo refresh
+    "BLACKLIST_AFTER_ROTATION": True,                # el refresh anterior queda inválido
+    "ALGORITHM": "HS256",                            # firma simétrica (clave en SECRET_KEY)
+    "AUTH_HEADER_TYPES": ("Bearer",),                # encabezado: Authorization: Bearer <token>
 }

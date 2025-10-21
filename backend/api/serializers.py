@@ -1,157 +1,180 @@
-# api/serializers.py
-from __future__ import annotations
-
-from datetime import date
-from decimal import Decimal
-
+"""
+api/serializers.py
+Serializadores de datos para la aplicación API de CropCare.
+"""
 from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Plot, Inspection, Diagnostic, Report, UserProfile
+from .models import Cultivo, Zona, Plot, Inspection, Diagnostic, Report, UserProfile
+from cropcare_orgs.models import EmployeeProfile, Empresa
 
 User = get_user_model()
 
 
-# ------------------ Auth / Perfil ------------------
-
-class UserRegisterSerializer(serializers.ModelSerializer):
-    """
-    Registro de usuario básico.
-    """
-    password = serializers.CharField(write_only=True, min_length=6)
-
+class ZonaSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ["id", "username", "email", "password"]
+        model = Zona
+        fields = ['id', 'nombre', 'cultivo', 'empresa', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'empresa', 'created_at', 'updated_at']
 
-    def create(self, validated_data):
-        # Crea el usuario con hash de contraseña
-        return User.objects.create_user(
-            username=validated_data["username"],
-            email=validated_data.get("email", ""),
-            password=validated_data["password"],
-        )
-
-
-class UserProfileSerializer(serializers.ModelSerializer):
-    """
-    Perfil del usuario autenticado.
-    'user' no se expone para escritura.
-    """
-    class Meta:
-        model = UserProfile
-        fields = ["id", "created_at", "updated_at", "display_name", "organization", "phone"]
-        read_only_fields = ["id", "created_at", "updated_at"]
-
-
-# ------------------ Mixins útiles ------------------
-
-class OwnerHiddenMixin(serializers.Serializer):
-    """
-    Inyecta el 'owner' a partir del usuario autenticado.
-    Todos los serializers de entidades de negocio lo heredan.
-    """
-    owner = serializers.HiddenField(default=serializers.CurrentUserDefault())
-
-
-# ------------------ Plot ------------------
-
-class PlotSerializer(OwnerHiddenMixin, serializers.ModelSerializer):
-    class Meta:
-        model = Plot
-        fields = [
-            "id", "created_at", "updated_at",
-            "name", "cultivo", "superficie_ha", "fecha_siembra", "notes",
-            "owner",
-        ]
-        read_only_fields = ["id", "created_at", "updated_at"]
-
-    # Validaciones de negocio a nivel serializer:
     def validate(self, attrs):
         """
-        Requisitos:
-          - superficie_ha > 0
-          - fecha_siembra no puede estar en el futuro
-          - name único por usuario (case-insensitive)
+        Validaciones adicionales para Zona:
+        - El nombre debe ser único dentro de la misma empresa (en Meta.unique_together).
         """
-        user = self.context["request"].user
-
-        # superficie > 0
-        superficie = attrs.get("superficie_ha", getattr(self.instance, "superficie_ha", None))
-        if superficie is not None and Decimal(superficie) <= Decimal("0"):
-            raise serializers.ValidationError({"superficie_ha": "Debe ser mayor a 0."})
-
-        # fecha de siembra no futura
-        f = attrs.get("fecha_siembra", getattr(self.instance, "fecha_siembra", None))
-        if f is not None and f > date.today():
-            raise serializers.ValidationError({"fecha_siembra": "No puede ser una fecha futura."})
-
-        # nombre único por owner (ignorando mayúsculas/minúsculas)
-        name = attrs.get("name", getattr(self.instance, "name", None))
-        if name:
-            qs = Plot.objects.filter(owner=user, name__iexact=name)
-            if self.instance:
-                qs = qs.exclude(pk=self.instance.pk)
-            if qs.exists():
-                raise serializers.ValidationError({"name": "Ya tienes un lote con ese nombre."})
-
+        # No se agregan validaciones personalizadas adicionales aquí,
+        # pues unique_together será validado automáticamente en el modelo.
         return attrs
 
 
-# ------------------ Inspection ------------------
-
-class InspectionSerializer(OwnerHiddenMixin, serializers.ModelSerializer):
+class PlotSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Inspection
-        fields = [
-            "id", "created_at", "updated_at",
-            "plot", "inspected_at", "notes", "photo",
-            "owner",
-        ]
-        read_only_fields = ["id", "created_at", "updated_at", "inspected_at"]
+        model = Plot
+        fields = ['id', 'name', 'zona', 'cultivo', 'owner', 'notes', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'owner', 'created_at', 'updated_at']
 
-    def validate_plot(self, plot: Plot):
+    def validate(self, attrs):
         """
-        El 'plot' debe ser del mismo owner (usuario autenticado).
+        Validación cruzada de zona vs. rol del usuario.
+        Se asegura que:
+        - Si el usuario pertenece a una empresa, proporcione una zona válida de su empresa.
+        - Si el usuario es individual, no se incluya zona.
         """
-        user = self.context["request"].user
-        if plot.owner_id != user.id:
-            raise serializers.ValidationError("No puedes usar una parcela que no es tuya.")
-        return plot
+        user = self.context['request'].user
+        profile = getattr(user, 'profile', None)
+        zona = attrs.get('zona')
+        if profile and profile.empresa_id:
+            # Usuario de empresa: debe especificar zona (de su empresa)
+            if zona is None:
+                raise serializers.ValidationError("Debes asignar la parcela a una zona de tu empresa.")
+            if zona.empresa_id != profile.empresa_id:
+                raise serializers.ValidationError("La zona seleccionada no pertenece a tu empresa.")
+        else:
+            # Usuario individual: no debe enviar zona
+            if zona is not None:
+                raise serializers.ValidationError("Los usuarios individuales no pueden asignar la parcela a una zona.")
+        return attrs
 
-
-# ------------------ Diagnostic ------------------
-
-class DiagnosticSerializer(OwnerHiddenMixin, serializers.ModelSerializer):
-    class Meta:
-        model = Diagnostic
-        fields = [
-            "id", "created_at", "updated_at",
-            "inspection", "label", "confidence", "model_version", "device_id",
-            "owner",
-        ]
-        read_only_fields = ["id", "created_at", "updated_at", "model_version", "device_id"]
-
-    def validate_inspection(self, inspection: "Inspection"):
-        user = self.context["request"].user
-        if inspection.owner_id != user.id:
-            raise serializers.ValidationError("No puedes diagnosticar una inspección ajena.")
-        return inspection
-
-    def validate_confidence(self, value):
-        if value < Decimal("0") or value > Decimal("1"):
-            raise serializers.ValidationError("La confianza debe estar entre 0 y 1.")
+    def validate_notes(self, value):
+        # Validar número de palabras en notes (Plot) - máximo 120 palabras
+        if value:
+            num_words = len(value.split())
+            if num_words > 120:
+                raise serializers.ValidationError("Las notas de la parcela no pueden exceder 120 palabras.")
         return value
 
 
-# ------------------ Report ------------------
+class InspectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Inspection
+        fields = ['id', 'plot', 'owner', 'image', 'notes', 'inspected_at']
+        read_only_fields = ['id', 'owner', 'inspected_at']
 
-class ReportSerializer(OwnerHiddenMixin, serializers.ModelSerializer):
+    def validate(self, attrs):
+        """
+        Validación de que la parcela pertenece al usuario o a su empresa.
+        """
+        user = self.context['request'].user
+        plot = attrs.get('plot')
+        if not plot:
+            raise serializers.ValidationError("Debe especificar una parcela para la inspección.")
+        profile = getattr(user, 'profile', None)
+        if profile and profile.empresa_id:
+            # Usuario de empresa: la parcela debe ser de su empresa
+            if plot.zona is None or plot.zona.empresa_id != profile.empresa_id:
+                raise serializers.ValidationError("No puedes inspeccionar una parcela fuera de tu empresa.")
+        else:
+            # Usuario individual: la parcela debe ser propia
+            if plot.owner_id != user.id:
+                raise serializers.ValidationError("No puedes inspeccionar parcelas que no son tuyas.")
+        return attrs
+
+    def validate_notes(self, value):
+        # Validar número de palabras en notes (Inspection) - máximo 240 palabras
+        if value:
+            num_words = len(value.split())
+            if num_words > 240:
+                raise serializers.ValidationError("Las notas de la inspección no pueden exceder 240 palabras.")
+        return value
+
+
+class DiagnosticSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Diagnostic
+        fields = ['id', 'inspection', 'owner', 'label', 'confidence', 'model_version', 'created_at']
+        read_only_fields = ['id', 'owner', 'created_at']
+
+
+class ReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
-        fields = [
-            "id", "created_at", "updated_at",
-            "title", "description", "format", "status", "generated_at", "file",
-            "owner",
-        ]
-        read_only_fields = ["id", "created_at", "updated_at", "generated_at", "file"]
+        fields = ['id', 'title', 'description', 'format', 'status', 'owner', 'generated_at', 'created_at']
+        read_only_fields = ['id', 'owner', 'status', 'generated_at', 'created_at']
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['id', 'display_name', 'organization', 'phone', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+
+class RegisterSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=8)
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    username = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        email = attrs['email'].lower()
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError("Ya existe un usuario con ese email.")
+        return attrs
+
+    @transaction.atomic
+    def create(self, validated_data):
+        email = validated_data['email'].lower()
+        password = validated_data['password']
+        username = validated_data.get('username') or email
+        first_name = validated_data.get('first_name', '')
+        last_name = validated_data.get('last_name', '')
+        # Crear el nuevo usuario
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            password=password,
+        )
+        # Crear perfil de empleado INDIVIDUAL
+        EmployeeProfile.objects.create(user=user, role=EmployeeProfile.Role.INDIVIDUAL)
+        # Crear perfil de usuario personal
+        UserProfile.objects.create(user=user, display_name=f"{first_name} {last_name}".strip())
+        return user
+
+    def to_representation(self, instance):
+        # Generar tokens JWT para el nuevo usuario y retornar datos relevantes
+        refresh = RefreshToken.for_user(instance)
+        profile = getattr(instance, 'profile', None)
+        empresa = profile.empresa if profile and profile.empresa_id else None
+        return {
+            'user': {
+                'id': instance.id,
+                'username': instance.username,
+                'email': instance.email,
+                'first_name': instance.first_name,
+                'last_name': instance.last_name,
+            },
+            'profile': {
+                'role': profile.role,
+                'empresa': profile.empresa.name if profile.empresa_id else None
+            } if profile else None,
+            'tokens': {
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+            }
+        }

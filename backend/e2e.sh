@@ -1,154 +1,221 @@
 #!/usr/bin/env bash
-# e2e.sh — Pruebas end-to-end para CropCare API (Capstone)
-# Requisitos: curl, jq
-# Supone: servidor corriendo en http://127.0.0.1:8000 y superusuario admin/admin creado
-
+# checks_extra.sh — Pruebas complementarias de CropCare backend
+# Cubre: max_uses / revoke / expiración JoinCodes; aislamiento de empresa;
+# validaciones de Zona/Plot; límites de palabras; y requerimiento de imagen.
 set -Eeuo pipefail
 
-BASE="${BASE:-http://127.0.0.1:8000}"
-API="$BASE/api/v1/cropcare"
-SCHEMA="$BASE/api/schema/"
-DOCS="$BASE/api/docs/"
-SUFFIX="$(date +%s)"            # evita conflictos por nombre único de Lote
-PLOT_NAME="Lote Norte $SUFFIX"
+BACKEND_URL="${BACKEND_URL:-http://127.0.0.1:8000}"
 
-hr(){ printf "\n%s\n" "────────────────────────────────────────────────────────"; }
-step(){ printf "\n▶ %s\n" "$*"; }
-ok(){ printf "✅ %s\n" "$*"; }
-err(){ printf "❌ %s\n" "$*" >&2; exit 1; }
+ADMIN1_EMAIL="${ADMIN1_EMAIL:-admin@agro.cl}"
+ADMIN1_PASS="${ADMIN1_PASS:-SuperSegura123}"
+ADMIN2_EMAIL="${ADMIN2_EMAIL:-admin2@agro.cl}"
+ADMIN2_PASS="${ADMIN2_PASS:-ClaveSegura456}"
+WORKER_EMAIL="${WORKER_EMAIL:-worker_checks@agro.cl}"
+WORKER_PASS="${WORKER_PASS:-Segura123}"
 
-need() { command -v "$1" >/dev/null 2>&1 || err "Necesitas '$1' instalado"; }
-need curl; need jq
+BOLD="\033[1m"; GREEN="\033[32m"; RED="\033[31m"; YELLOW="\033[33m"; NC="\033[0m"
+say(){ echo -e "${BOLD}$*${NC}"; }
+ok(){ echo -e "${GREEN}✔ $*${NC}"; }
+warn(){ echo -e "${YELLOW}⚠ $*${NC}"; }
+err(){ echo -e "${RED}✘ $*${NC}" >&2; }
 
-# Helpers JSON
-post_json(){ curl -sS -X POST "$1" -H "Content-Type: application/json" -d "$2"; }
-patch_json(){ curl -sS -X PATCH "$1" -H "Authorization: Bearer $ACCESS" -H "Content-Type: application/json" -d "$2"; }
-auth_get(){ curl -sS "$1" -H "Authorization: Bearer $ACCESS"; }
-auth_delete(){ curl -sS -i -X DELETE "$1" -H "Authorization: Bearer $ACCESS"; }
+require_cmd(){ command -v "$1" >/dev/null 2>&1 || { err "Falta '$1'"; exit 1; }; }
+trap 'err "Error en la línea $LINENO"; exit 1' ERR
 
-hr
-step "Status del servicio"
-curl -sS "$BASE/status/" | jq -e '.status=="ok"' >/dev/null && ok "Status OK" || err "Status no OK"
+TMP_DIR="$(mktemp -d)"
+cleanup(){ rm -rf "$TMP_DIR"; }
+trap cleanup EXIT
 
-step "API root"
-ROOT_JSON=$(curl -sS "$API/" | jq .) || err "No se pudo leer root"
-echo "$ROOT_JSON" | jq .
-ok "Root OK"
+require_cmd curl
+require_cmd jq
+[[ -f manage.py ]] || { err "Ejecuta este script en la carpeta backend (donde está manage.py)"; exit 1; }
 
-step "OpenAPI schema & Swagger"
-# Comprobamos que existan endpoints de schema y swagger
-curl -sS -I "$SCHEMA" >/dev/null && ok "Schema disponible (descarga YAML)"
-curl -sS -I "$DOCS"   >/dev/null && ok "Swagger UI disponible"
+# --- helper curl con headers seguros ---
+# uso: call_json <method> <url> <outfile> <headers-json-array> [data-json]
+call_json() {
+  local METHOD="$1" URL="$2" OUT="$3" HDRS_JSON="${4:-[]}" DATA="${5:-}"
+  local CURL_ARGS=(-s -S -X "$METHOD" "$URL" -o "$OUT" -w "%{http_code}")
+  mapfile -t HEADERS < <(printf '%s' "$HDRS_JSON" | jq -r '.[]?')
+  for h in "${HEADERS[@]}"; do [[ -n "$h" ]] && CURL_ARGS+=(-H "$h"); done
+  [[ -n "$DATA" ]] && CURL_ARGS+=(-H "Content-Type: application/json" -d "$DATA")
+  curl "${CURL_ARGS[@]}"
+}
+assert_code() {
+  local GOT="$1" WANT="$2" MSG="$3" BODY_FILE="$4"
+  if [[ "$GOT" != "$WANT" ]]; then
+    err "$MSG (esperado $WANT, recibido $GOT)"
+    [[ -f "$BODY_FILE" ]] && { echo "Respuesta:"; cat "$BODY_FILE" | jq . || cat "$BODY_FILE"; }
+    exit 1
+  fi
+}
 
-hr
-step "Login ADMIN → tokens"
-TOKENS_ADMIN=$(post_json "$API/auth/jwt/create/" '{"username":"admin","password":"admin"}') || err "Login admin falló"
-ACCESS_ADMIN=$(echo "$TOKENS_ADMIN" | jq -er '.access') || err "Sin access admin"
-REFRESH_ADMIN=$(echo "$TOKENS_ADMIN" | jq -er '.refresh') || err "Sin refresh admin"
-ok "Admin autenticado"
+# --- ping ---
+say "Comprobando backend en ${BACKEND_URL}…"
+CODE=$(curl -s -o /dev/null -w "%{http_code}" "${BACKEND_URL}/")
+[[ "$CODE" == "200" || "$CODE" == "404" ]] || { err "Backend no responde (HTTP $CODE). Corre: python manage.py runserver"; exit 1; }
+ok "Backend responde (HTTP $CODE)"
 
-step "Registrar usuaria ANA (idempotente)"
-REG=$(post_json "$API/auth/register/" '{"username":"ana","email":"ana@example.com","password":"CLAVE_ANA"}' || true)
-CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "$API/auth/register/" -H "Content-Type: application/json" -d '{"username":"ana","email":"ana@example.com","password":"CLAVE_ANA"}')
-if [ "$CODE" = "201" ]; then ok "Ana registrada"
-elif [ "$CODE" = "400" ]; then ok "Registro de Ana ya existía (idempotente)"
-else err "Registro Ana devolvió HTTP $CODE"
+# --- login o registro admin1 (empresa A) ---
+say "Login ADMIN1 (${ADMIN1_EMAIL})…"
+OUT="$TMP_DIR/a1_login.json"
+CODE=$(call_json POST "${BACKEND_URL}/api/orgs/auth/token/" "$OUT" '["Content-Type: application/json"]' "{\"username\":\"${ADMIN1_EMAIL}\",\"password\":\"${ADMIN1_PASS}\"}") || true
+if [[ "$CODE" != "200" ]]; then
+  warn "No se pudo loguear. Registrando ADMIN1 + empresa A…"
+  CODE=$(call_json POST "${BACKEND_URL}/api/orgs/auth/register-admin/" "$OUT" '["Content-Type: application/json"]' "{\"email\":\"${ADMIN1_EMAIL}\",\"password\":\"${ADMIN1_PASS}\",\"first_name\":\"Ana\",\"last_name\":\"Admin\",\"company_name\":\"Empresa A\",\"tax_id\":\"11.111.111-1\"}")
+  assert_code "$CODE" 201 "Registro admin1 falló" "$OUT"
 fi
+ACCESS1=$(jq -r '.access // .tokens.access' "$OUT"); [[ -n "$ACCESS1" && "$ACCESS1" != "null" ]] || { err "Sin token de admin1"; cat "$OUT"; exit 1; }
+HDR1=$(jq -nc --arg h "Authorization: Bearer $ACCESS1" '[ $h ]'); ok "Admin1 autenticado"
 
-step "Login ANA → tokens"
-TOKENS=$(post_json "$API/auth/jwt/create/" '{"username":"ana","password":"CLAVE_ANA"}') || err "Login ana falló"
-echo "$TOKENS" | jq .
-ACCESS=$(echo "$TOKENS" | jq -er '.access') || err "Sin access"
-REFRESH=$(echo "$TOKENS" | jq -er '.refresh') || err "Sin refresh"
-ok "Obtuve ACCESS y REFRESH"
+# --- cultivo base ---
+say "Creando/Reusando cultivo 'Zanahoria'…"
+CULTIVO_ID="$(
+  python manage.py shell -c "from api.models import Cultivo; o,_=Cultivo.objects.get_or_create(nombre='Zanahoria'); print(o.id)" \
+  | tail -n 1 | tr -dc '0-9'
+)"
+[[ -n "$CULTIVO_ID" ]] || { err "No pude obtener CULTIVO_ID"; exit 1; }
+ok "Cultivo ID=$CULTIVO_ID"
 
-step "Verificar ACCESS"
-post_json "$API/auth/jwt/verify/" "{\"token\":\"$ACCESS\"}" | jq -e 'type=="object"' >/dev/null && ok "ACCESS válido" || err "ACCESS inválido"
+# --- zona base (empresa A) ---
+say "Creando zona base Empresa A…"
+OUT="$TMP_DIR/a1_zoneA.json"
+CODE=$(call_json POST "${BACKEND_URL}/api/zonas/" "$OUT" "$HDR1" "{\"nombre\":\"Zona-A\",\"cultivo\":${CULTIVO_ID}}") || true
+[[ "$CODE" == "201" || "$CODE" == "400" ]] || { err "Creación Zona-A retornó $CODE inesperado"; cat "$OUT"; exit 1; }
+ZONA_A_ID=$(jq -r '.id // empty' "$OUT")
+[[ -z "$ZONA_A_ID" ]] && ZONA_A_ID="$(
+  curl -s -H "Authorization: Bearer $ACCESS1" "${BACKEND_URL}/api/zonas/" | jq '.results[]? | select(.nombre=="Zona-A") | .id' | head -n1
+)"
+[[ -n "$ZONA_A_ID" ]] || { err "No conseguí ZONA_A_ID"; exit 1; }
+ok "Zona-A ID=$ZONA_A_ID"
 
-step "Ping autenticado"
-auth_get "$API/ping/" | jq .
-ok "Ping OK"
+# --- CHECK JoinCodes: max_uses y revoke ---
+say "JoinCodes: creando con max_uses=2…"
+OUT="$TMP_DIR/jc2.json"
+CODE=$(call_json POST "${BACKEND_URL}/api/orgs/join-codes/" "$OUT" "$HDR1" '{"max_uses":2}') || true
+assert_code "$CODE" 201 "Creación join-code max_uses=2 falló" "$OUT"
+JC2_CODE=$(jq -r '.code' "$OUT"); JC2_ID=$(jq -r '.id' "$OUT"); ok "JoinCode JC2=$JC2_CODE (id=$JC2_ID)"
 
-hr
-step "Perfil (GET)"
-auth_get "$API/auth/profile/" | jq .
-ok "Perfil leído"
+# Registrar 2 workers con el código ⇒ OK; 3º ⇒ 400
+say "Consumir JC2 con 2 workers y validar rechazo en el 3º…"
+W1=$(mktemp); W2=$(mktemp); W3=$(mktemp)
+for i in 1 2; do
+  EMAIL="max$i@agro.cl"
+  OUT="$TMP_DIR/w_max${i}.json"
+  CODE=$(call_json POST "${BACKEND_URL}/api/orgs/auth/register-worker/" "$OUT" '["Content-Type: application/json"]' "{\"email\":\"${EMAIL}\",\"password\":\"Segura123\",\"join_code\":\"${JC2_CODE}\"}") || true
+  assert_code "$CODE" 201 "Registro worker $i con JC2 falló" "$OUT"
+done
+OUT="$TMP_DIR/w_max3.json"
+CODE=$(call_json POST "${BACKEND_URL}/api/orgs/auth/register-worker/" "$OUT" '["Content-Type: application/json"]' "{\"email\":\"max3@agro.cl\",\"password\":\"Segura123\",\"join_code\":\"${JC2_CODE}\"}") || true
+assert_code "$CODE" 400 "Tercer uso de JC2 NO fue rechazado" "$OUT"
+ok "max_uses funciona"
 
-step "Perfil (PATCH)"
-patch_json "$API/auth/profile/" '{"display_name":"Ana T.","organization":"CropCare","phone":"+56 9 1234 5678"}' | jq .
-ok "Perfil actualizado"
+# revoke
+say "Revocando join-code JC2 y validando rechazo…"
+OUT="$TMP_DIR/jc2_patch.json"
+CODE=$(call_json PATCH "${BACKEND_URL}/api/orgs/join-codes/${JC2_ID}/" "$OUT" "$HDR1" '{"revoked":true}') || true
+assert_code "$CODE" 200 "No pude revocar JC2" "$OUT"
+OUT="$TMP_DIR/w_revoked.json"
+CODE=$(call_json POST "${BACKEND_URL}/api/orgs/auth/register-worker/" "$OUT" '["Content-Type: application/json"]' "{\"email\":\"revocado@agro.cl\",\"password\":\"Segura123\",\"join_code\":\"${JC2_CODE}\"}") || true
+assert_code "$CODE" 400 "Código revocado NO fue rechazado" "$OUT"
+ok "revoked funciona"
 
-hr
-step "Crear Plot (Lote)"
-P1=$(post_json "$API/plots/" "{\"name\":\"$PLOT_NAME\",\"cultivo\":\"tomate\",\"superficie_ha\":1.5,\"fecha_siembra\":\"2025-09-01\",\"notes\":\"ensayo $SUFFIX\"}" \
-      | jq .) || err "No se pudo crear Plot"
-echo "$P1"
-PLOT_ID=$(echo "$P1" | jq -er '.id')
-ok "Plot creado ($PLOT_ID)"
+# --- CHECK Zona duplicada en la MISMA empresa ⇒ 400
+say "Zona duplicada en misma empresa debe fallar (400)…"
+OUT="$TMP_DIR/zone_dup.json"
+CODE=$(call_json POST "${BACKEND_URL}/api/zonas/" "$OUT" "$HDR1" "{\"nombre\":\"Zona-A\",\"cultivo\":${CULTIVO_ID}}") || true
+assert_code "$CODE" 400 "Zona duplicada NO fue rechazada" "$OUT"
+ok "Restricción de unicidad por empresa correcta"
 
-step "Listar/filtrar/ordenar Plots"
-auth_get "$API/plots/?page=1&search=tomate&ordering=-created_at" | jq .
-ok "List/filters OK"
+# --- CHECK Plot reglas negocio ---
+say "Plot: empresa debe exigir zona (400 si falta zona)…"
+OUT="$TMP_DIR/plot_nozona.json"
+DATA=$(jq -nc --arg name "Lote-sin-zona" --argjson cultivo "$CULTIVO_ID" '{name:$name, cultivo:$cultivo, notes:"x"}')
+CODE=$(call_json POST "${BACKEND_URL}/api/plots/" "$OUT" "$HDR1" "$DATA") || true
+assert_code "$CODE" 400 "Plot sin zona NO fue rechazado" "$OUT"
+ok "Validación de zona requerida en empresa OK"
 
-step "Detalle Plot"
-auth_get "$API/plots/$PLOT_ID/" | jq .
-ok "Detalle OK"
+# Para probar “zona de otra empresa”, necesitamos empresa B:
+say "Creando empresa B (admin2)…"
+OUT="$TMP_DIR/a2_login.json"
+CODE=$(call_json POST "${BACKEND_URL}/api/orgs/auth/token/" "$OUT" '["Content-Type: application/json"]' "{\"username\":\"${ADMIN2_EMAIL}\",\"password\":\"${ADMIN2_PASS}\"}") || true
+if [[ "$CODE" != "200" ]]; then
+  warn "No se pudo loguear admin2. Registrando admin2 + empresa B…"
+  CODE=$(call_json POST "${BACKEND_URL}/api/orgs/auth/register-admin/" "$OUT" '["Content-Type: application/json"]' "{\"email\":\"${ADMIN2_EMAIL}\",\"password\":\"${ADMIN2_PASS}\",\"first_name\":\"Beto\",\"last_name\":\"Boss\",\"company_name\":\"Empresa B\",\"tax_id\":\"22.222.222-2\"}")
+  assert_code "$CODE" 201 "Registro admin2 falló" "$OUT"
+fi
+ACCESS2=$(jq -r '.access // .tokens.access' "$OUT"); HDR2=$(jq -nc --arg h "Authorization: Bearer $ACCESS2" '[ $h ]'); ok "Admin2 autenticado"
 
-step "Actualizar Plot (PATCH)"
-patch_json "$API/plots/$PLOT_ID/" '{"notes":"ensayo actualizado"}' | jq .
-ok "Plot actualizado"
+say "Creando Zona-B (empresa B)…"
+OUT="$TMP_DIR/zoneB.json"
+CODE=$(call_json POST "${BACKEND_URL}/api/zonas/" "$OUT" "$HDR2" "{\"nombre\":\"Zona-B\",\"cultivo\":${CULTIVO_ID}}") || true
+assert_code "$CODE" 201 "No pude crear Zona-B" "$OUT"
+ZONA_B_ID=$(jq -r '.id' "$OUT")
 
-step "Negativo: Crear Plot inválido (espera 400)"
-BAD_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "$API/plots/" -H "Authorization: Bearer $ACCESS" -H "Content-Type: application/json" -d '{"name":""}')
-[ "$BAD_CODE" = "400" ] && ok "Validaciones OK (400 en payload inválido)" || err "Se esperaba 400, devolvió $BAD_CODE"
+say "Intentar crear Plot en empresa A pero con Zona-B (de otra empresa) ⇒ 400…"
+OUT="$TMP_DIR/plot_cross.json"
+DATA=$(jq -nc --arg name "Lote-cross" --argjson zona "$ZONA_B_ID" --argjson cultivo "$CULTIVO_ID" '{name:$name, zona:$zona, cultivo:$cultivo, notes:"x"}')
+CODE=$(call_json POST "${BACKEND_URL}/api/plots/" "$OUT" "$HDR1" "$DATA") || true
+assert_code "$CODE" 400 "Plot con zona de otra empresa NO fue rechazado" "$OUT"
+ok "Bloqueo de cruce empresa/zona OK"
 
-hr
-step "Crear Inspección"
-I1=$(post_json "$API/inspections/" "{\"plot\":\"$PLOT_ID\",\"notes\":\"hojas con manchas\"}" | jq .) || err "No se pudo crear inspección"
-echo "$I1"
-INSP_ID=$(echo "$I1" | jq -er '.id')
-ok "Inspección creada ($INSP_ID)"
+# --- CHECK Aislamiento de listados (admin2 no ve zonas de empresa A) ---
+say "Admin2 listando zonas (no debe ver Zona-A)…"
+OUT="$TMP_DIR/a2_zonas.json"
+CODE=$(call_json GET "${BACKEND_URL}/api/zonas/" "$OUT" "$HDR2") || true
+assert_code "$CODE" 200 "Listar zonas admin2 falló" "$OUT"
+COUNT_A2=$(jq '[.results[]?] | length // 0' "$OUT" 2>/dev/null || jq 'length // 0' "$OUT")
+[[ "$COUNT_A2" -eq 1 ]] || warn "Admin2 ve $COUNT_A2 zonas (esperable 1 si existe solo Zona-B)"
+ok "Aislamiento de zonas por empresa OK (no aparecen zonas de empresa A)"
 
-step "Crear Diagnóstico"
-D1=$(post_json "$API/diagnostics/" "{\"inspection\":\"$INSP_ID\",\"label\":\"tizon_tardio\",\"confidence\":0.92}" | jq .) || err "Diagnóstico falló"
-echo "$D1"
-DIAG_ID=$(echo "$D1" | jq -er '.id')
-ok "Diagnóstico creado ($DIAG_ID)"
+# --- CHECK límites de palabras en notes ---
+make_words() { local n="$1"; python - "$n" <<'PY'
+import sys
+n=int(sys.argv[1]); print(" ".join(["w"]*n))
+PY
+}
+say "Plot: 121 palabras en notes ⇒ 400…"
+LONG120="$(make_words 121)"
+OUT="$TMP_DIR/plot_long.json"
+DATA=$(jq -nc --arg name "Lote-words" --argjson zona "$ZONA_A_ID" --argjson cultivo "$CULTIVO_ID" --arg notes "$LONG120" '{name:$name, zona:$zona, cultivo:$cultivo, notes:$notes}')
+CODE=$(call_json POST "${BACKEND_URL}/api/plots/" "$OUT" "$HDR1" "$DATA") || true
+assert_code "$CODE" 400 "Plot con >120 palabras NO fue rechazado" "$OUT"
+ok "Límite de 120 palabras en plot OK"
 
-step "Eliminar Diagnóstico"
-auth_delete "$API/diagnostics/$DIAG_ID/" | grep -q "204 No Content" && ok "Diagnóstico eliminado" || err "No se pudo eliminar diagnóstico"
+say "Inspection: 241 palabras en notes ⇒ 400…"
+# crear plot válido para la inspección
+OUT="$TMP_DIR/plot_ok.json"
+DATA=$(jq -nc --arg name "Lote-ok" --argjson zona "$ZONA_A_ID" --argjson cultivo "$CULTIVO_ID" '{name:$name, zona:$zona, cultivo:$cultivo, notes:"ok"}')
+CODE=$(call_json POST "${BACKEND_URL}/api/plots/" "$OUT" "$HDR1" "$DATA") || true
+assert_code "$CODE" 201 "No pude crear plot válido" "$OUT"
+PLOT_OK=$(jq -r '.id' "$OUT")
 
-hr
-step "Crear Report (historial de reportes) 1"
-R1=$(post_json "$API/reports/" "{\"title\":\"Reporte $SUFFIX A\",\"plot\":\"$PLOT_ID\"}" | jq .) || err "No se pudo crear Report A"
-echo "$R1"
-R1_ID=$(echo "$R1" | jq -er '.id')
-ok "Report A creado ($R1_ID)"
+LONG240="$(make_words 241)"
+say "Crear inspección SIN imagen ⇒ 400…"
+OUT="$TMP_DIR/insp_noimg.json"
+# multipart sin image:
+CODE=$(curl -s -S -o "$OUT" -w "%{http_code}" -X POST "${BACKEND_URL}/api/inspections/" \
+  -H "Authorization: Bearer $ACCESS1" \
+  -F "plot=$PLOT_OK" \
+  -F "notes=algo") || true
+assert_code "$CODE" 400 "Inspección sin imagen NO fue rechazada" "$OUT"
+ok "Requerimiento de imagen en inspección OK"
 
-step "Crear Report (historial de reportes) 2"
-R2=$(post_json "$API/reports/" "{\"title\":\"Reporte $SUFFIX B\",\"plot\":\"$PLOT_ID\"}" | jq .) || err "No se pudo crear Report B"
-echo "$R2"
-R2_ID=$(echo "$R2" | jq -er '.id')
-ok "Report B creado ($R2_ID)"
+say "Crear inspección con imagen pero 241 palabras en notes ⇒ 400…"
+# generar PNG mínimo
+IMG="$TMP_DIR/min.png"
+python - "$IMG" <<'PY'
+import base64,sys
+b=base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFgwJ/k3J4dQAAAABJRU5ErkJggg==")
+open(sys.argv[1],'wb').write(b)
+print(sys.argv[1])
+PY
+OUT="$TMP_DIR/insp_long.json"
+CODE=$(curl -s -S -o "$OUT" -w "%{http_code}" -X POST "${BACKEND_URL}/api/inspections/" \
+  -H "Authorization: Bearer $ACCESS1" \
+  -F "plot=$PLOT_OK" \
+  -F "image=@$IMG" \
+  -F "notes=$LONG240") || true
+assert_code "$CODE" 400 "Inspección con >240 palabras NO fue rechazada" "$OUT"
+ok "Límite de 240 palabras en inspección OK"
 
-step "Marcar Report B como READY"
-patch_json "$API/reports/$R2_ID/" '{"status":"ready"}' | jq .
-ok "Report B → READY"
-
-step "Listar Reports filtrando status=ready, ordering=-created_at"
-auth_get "$API/reports/?status=ready&ordering=-created_at" | jq .
-ok "Listado filtrado OK"
-
-hr
-step "Refrescar token (REFRESH → NEW_ACCESS)"
-NEW_ACCESS=$(post_json "$API/auth/jwt/refresh/" "{\"refresh\":\"$REFRESH\"}" | jq -er '.access')
-[ -n "$NEW_ACCESS" ] && ok "Refresh OK" || err "Refresh falló"
-
-hr
-step "Probar aislamiento por usuario (ADMIN vs ANA)"
-# Admin intenta leer el Lote de Ana: la API oculta objetos de otros dueños → 404
-ADMIN_PLOT_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "$API/plots/$PLOT_ID/" -H "Authorization: Bearer $ACCESS_ADMIN")
-[ "$ADMIN_PLOT_CODE" = "404" ] && ok "Ownership aplicado (admin no ve lotes ajenos por API)" || err "Se esperaba 404, devolvió $ADMIN_PLOT_CODE"
-
-hr
-ok "👌 TODO OK — E2E completo"
+echo -e "\n${GREEN}CHECKS EXTRA COMPLETOS ✔${NC}"

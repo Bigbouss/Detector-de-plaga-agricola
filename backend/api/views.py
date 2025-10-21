@@ -1,154 +1,187 @@
-# api/views.py
 """
-ViewSets con corte por 'owner' + endpoints auxiliares:
-- ApiRootView: raíz informativa
-- PingView: protegido, para validar JWT
-- RegisterView: crear usuario (público)
-- UserProfileMeView: obtener/actualizar el perfil del usuario autenticado
-- ViewSets: Plot, Inspection, Diagnostic, Report
+api/views.py
+Vistas de la aplicación API de CropCare.
 """
-
-from rest_framework import viewsets, permissions, filters, status
-from rest_framework.views import APIView
+from django.contrib.auth import get_user_model
+from django.db.models import Q
+from rest_framework import generics, viewsets, mixins, permissions
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.generics import RetrieveUpdateAPIView
-from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.views import APIView
 
-from .models import Plot, Inspection, Diagnostic, Report, UserProfile
+from .models import Zona, Plot, Inspection, Diagnostic, Report, UserProfile
 from .serializers import (
-    PlotSerializer, InspectionSerializer, DiagnosticSerializer,
-    ReportSerializer, UserRegisterSerializer, UserProfileSerializer
+    ZonaSerializer,
+    PlotSerializer,
+    InspectionSerializer,
+    DiagnosticSerializer,
+    ReportSerializer,
+    RegisterSerializer,
+    UserProfileSerializer,
 )
+from .permissions import CanCreateZona, CanCreatePlot
+
+User = get_user_model()
 
 
-# ---- Mixin: siempre filtra por owner ----
-class OwnerQuerysetMixin:
-    def get_queryset(self):
-        """
-        Cada ViewSet define self.queryset (todos los objetos).
-        Aquí *cortamos* por el usuario autenticado para que cada
-        persona solo vea/edite lo suyo.
-        """
-        return self.queryset.filter(owner=self.request.user)
-
-    def perform_create(self, serializer):
-        """
-        'owner' lo setea HiddenField(CurrentUserDefault()) en los serializers,
-        por lo que simplemente guardamos.
-        """
-        serializer.save()
-
-
-# ---- API Root y Ping ----
 class ApiRootView(APIView):
-    permission_classes = [permissions.AllowAny]
+    """
+    Vista raíz de la API que proporciona enlaces o información general.
+    """
+    permission_classes = [AllowAny]
 
     def get(self, request):
-        # build_absolute_uri te permite construir URLs absolutas
-        base = request.build_absolute_uri  # función
         return Response({
-            "name": "cropcare-api",
-            "version": "v1",
-            "endpoints": {
-                "ping":        base("ping/"),
-                "jwt_create":  base("auth/jwt/create/"),
-                "jwt_refresh": base("auth/jwt/refresh/"),
-                "jwt_verify":  base("auth/jwt/verify/"),
-                "register":    base("auth/register/"),
-                "profile":     base("auth/profile/"),
-                "docs": "/api/docs/",
-            }
+            "message": "Bienvenido a CropCare API",
+            "auth_register": request.build_absolute_uri('/api/auth/register/'),
+            "auth_login": request.build_absolute_uri('/api/auth/jwt/create/'),
+            "profile": request.build_absolute_uri('/api/auth/profile/'),
+            "plots": request.build_absolute_uri('/api/plots/'),
+            "inspections": request.build_absolute_uri('/api/inspections/'),
+            "reports": request.build_absolute_uri('/api/reports/')
         })
 
 
 class PingView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    """
+    Vista para comprobar la autenticación JWT (responde 'pong' si el token es válido).
+    """
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response({"message": "pong", "user": request.user.username})
+        return Response({"detail": "pong"})
 
 
-class RegisterView(APIView):
+class RegisterView(generics.GenericAPIView):
     """
-    Registro simple. Tras crear, el cliente debe obtener JWT en /auth/jwt/create/.
+    Registro de usuario individual (sin empresa).
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAny]
+    serializer_class = RegisterSerializer
 
-    def post(self, request):
-        serializer = UserRegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response(
-            {"id": user.id, "username": user.username, "email": user.email},
-            status=status.HTTP_201_CREATED
-        )
+    def post(self, request, *args, **kwargs):
+        ser = self.get_serializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        user = ser.save()
+        # Se devuelve el usuario con su perfil y tokens de autenticación
+        return Response(ser.to_representation(user), status=201)
 
 
-class UserProfileMeView(RetrieveUpdateAPIView):
+class UserProfileMeView(generics.RetrieveUpdateAPIView):
     """
-    Devuelve y permite actualizar el perfil del usuario autenticado.
-    - GET  /auth/profile/       → ver perfil
-    - PUT/PATCH /auth/profile/  → actualizar display_name, organization, phone
+    Obtener o actualizar el perfil personal del usuario autenticado (display_name, phone, etc.).
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
 
     def get_object(self):
-        # Crea el perfil si no existe (conveniente para front)
-        profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
-        return profile
+        # Retorna el perfil de usuario (UserProfile) del usuario autenticado
+        return self.request.user.userprofile
 
 
-# ---- CRUD protegidos por JWT + owner ----
-class PlotViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+class ZonaViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para CRUD de Zonas (solo para usuarios de empresa con permisos adecuados).
+    """
+    permission_classes = [IsAuthenticated, CanCreateZona]
+    serializer_class = ZonaSerializer
+
+    def get_queryset(self):
+        # Usuarios de empresa: filtrar zonas por su empresa. Usuarios individuales: ninguno.
+        user = self.request.user
+        profile = getattr(user, 'profile', None)
+        if profile and profile.empresa_id:
+            # Zonas de la empresa del usuario
+            return Zona.objects.filter(empresa=profile.empresa).order_by('-created_at')
+        # Si es usuario individual (sin empresa), no tiene zonas
+        return Zona.objects.none()
+
+    def perform_create(self, serializer):
+        # Asigna la empresa del usuario a la zona que se crea
+        empresa = self.request.user.profile.empresa
+        serializer.save(empresa=empresa)
+
+
+class PlotViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para CRUD de Parcelas (Plots).
+    Admins y trabajadores con permiso pueden crear/editar parcelas en la empresa;
+    usuarios individuales pueden gestionar sus parcelas personales.
+    """
+    permission_classes = [IsAuthenticated, CanCreatePlot]
     serializer_class = PlotSerializer
-    queryset = Plot.objects.all()
 
-    # Filtros, búsqueda y ordenación
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["cultivo", "fecha_siembra"]
-    search_fields = ["name", "cultivo", "notes"]
-    ordering_fields = ["created_at", "name", "fecha_siembra"]
-    ordering = ["-created_at"]
+    def get_queryset(self):
+        user = self.request.user
+        profile = getattr(user, 'profile', None)
+        if profile and profile.empresa_id:
+            # Parcelas de la empresa del usuario + sus parcelas individuales (si tuviera)
+            return Plot.objects.filter(
+                Q(zona__empresa=profile.empresa) | Q(owner=user)
+            ).order_by('-created_at')
+        # Usuario individual: solo sus propias parcelas
+        return Plot.objects.filter(owner=user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        # Asegurar que el owner sea el usuario actual
+        serializer.save(owner=self.request.user)
 
 
-class InspectionViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+class InspectionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para CRUD de Inspecciones.
+    Cualquier usuario autenticado puede crear inspecciones en sus parcelas (o parcelas de su empresa).
+    """
+    permission_classes = [IsAuthenticated]  # cualquier usuario autenticado (ADMIN, WORKER, INDIVIDUAL)
     serializer_class = InspectionSerializer
-    queryset = Inspection.objects.select_related("plot").all()
 
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["plot", "inspected_at"]
-    search_fields = ["notes", "plot__name", "plot__cultivo"]
-    ordering_fields = ["inspected_at", "created_at"]
-    ordering = ["-inspected_at"]
+    def get_queryset(self):
+        user = self.request.user
+        profile = getattr(user, 'profile', None)
+        if profile and profile.empresa_id:
+            # Inspecciones de parcelas de la empresa + inspecciones en sus parcelas individuales (si existieran)
+            return Inspection.objects.filter(
+                Q(plot__zona__empresa=profile.empresa) | Q(plot__owner=user)
+            ).order_by('-inspected_at')
+        # Individual: inspecciones de sus parcelas
+        return Inspection.objects.filter(plot__owner=user).order_by('-inspected_at')
+
+    def perform_create(self, serializer):
+        # Asignar owner actual a la inspección
+        serializer.save(owner=self.request.user)
 
 
-class DiagnosticViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+class DiagnosticViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet de solo lectura para Diagnósticos de inspecciones.
+    Los diagnósticos corresponden a inspecciones de parcelas accesibles por el usuario.
+    """
+    permission_classes = [IsAuthenticated]
     serializer_class = DiagnosticSerializer
-    queryset = Diagnostic.objects.select_related("inspection", "inspection__plot").all()
 
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["inspection", "label"]
-    search_fields = ["label", "inspection__notes", "inspection__plot__name"]
-    ordering_fields = ["created_at", "confidence"]
-    ordering = ["-created_at"]
+    def get_queryset(self):
+        user = self.request.user
+        profile = getattr(user, 'profile', None)
+        if profile and profile.empresa_id:
+            return Diagnostic.objects.filter(
+                Q(inspection__plot__zona__empresa=profile.empresa) | Q(inspection__plot__owner=user)
+            ).order_by('-created_at')
+        return Diagnostic.objects.filter(inspection__plot__owner=user).order_by('-created_at')
 
 
-class ReportViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
+class ReportViewSet(viewsets.ModelViewSet):
     """
-    Módulo de historial de reportes:
-    - Creas la entidad Report y, en un proceso aparte, generas el archivo,
-      marcas status='ready' y adjuntas file si corresponde.
+    ViewSet para CRUD de Reportes de datos.
+    Cada usuario ve y crea sus propios reportes.
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     serializer_class = ReportSerializer
-    queryset = Report.objects.all()
 
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["status", "format"]
-    search_fields = ["title", "description"]
-    ordering_fields = ["created_at", "generated_at"]
-    ordering = ["-created_at"]
+    def get_queryset(self):
+        # Un usuario solo puede ver sus propios reportes
+        return Report.objects.filter(owner=self.request.user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        # Asigna el propietario actual al reporte y lo guarda
+        serializer.save(owner=self.request.user)
