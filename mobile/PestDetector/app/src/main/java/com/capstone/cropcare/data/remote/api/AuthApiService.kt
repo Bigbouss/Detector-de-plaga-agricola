@@ -2,35 +2,50 @@ package com.capstone.cropcare.data.remote.api
 
 import com.capstone.cropcare.data.remote.dto.*
 import retrofit2.Response
-import retrofit2.http.*
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.POST
 
 interface AuthApiService {
 
-    @POST("auth/login/")
+    // Login
+    @POST("orgs/auth/token/")
     suspend fun login(
         @Body request: LoginRequest
-    ): Response<AuthResponse>
+    ): Response<TokenResponse>
 
-    @POST("auth/register_admin/")
+    // Register Admin
+    @POST("orgs/auth/register-admin/")
     suspend fun registerAdmin(
         @Body request: RegisterAdminRequest
     ): Response<AuthResponse>
 
-    @POST("auth/register_worker/")
+    // Register Worker
+    @POST("orgs/auth/register-worker/")
     suspend fun registerWorker(
         @Body request: RegisterWorkerRequest
     ): Response<AuthResponse>
 
-    @POST("invitations/validate_code/")
+    // Validar código de invitación
+    @POST("orgs/invitations/validate/")
     suspend fun validateInvitationCode(
         @Body request: ValidateCodeRequest
     ): Response<ValidateCodeResponse>
 
-    @POST("auth/refresh/")
+    // Obtener datos del usuario autenticado
+    @GET("orgs/auth/me/")
+    suspend fun getMe(
+        @Header("Authorization") token: String
+    ): Response<MeResponse>
+
+    // Refresh token
+    @POST("orgs/auth/token/refresh/")
     suspend fun refreshToken(
         @Body request: RefreshTokenRequest
     ): Response<RefreshTokenResponse>
 
+    // Logout
     @POST("auth/logout/")
     suspend fun logout(
         @Header("Authorization") token: String

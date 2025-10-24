@@ -2,7 +2,10 @@ package com.capstone.cropcare.data.local.preferences
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.capstone.cropcare.domain.model.UserModel
 import com.capstone.cropcare.domain.model.UserRole
@@ -21,50 +24,51 @@ class UserPreferences @Inject constructor(
     private val dataStore = context.dataStore
 
     companion object {
-        private val KEY_USER_ID = stringPreferencesKey("user_id")
-        private val KEY_EMAIL = stringPreferencesKey("email")
-        private val KEY_NAME = stringPreferencesKey("name")
-        private val KEY_ROLE = stringPreferencesKey("role")
-        private val KEY_ORGANIZATION_ID = stringPreferencesKey("organization_id")
-        private val KEY_ORGANIZATION_NAME = stringPreferencesKey("organization_name")
+        private val KEY_UID = stringPreferencesKey("user_uid")
+        private val KEY_EMAIL = stringPreferencesKey("user_email")
+        private val KEY_NAME = stringPreferencesKey("user_name")
+        private val KEY_ROLE = stringPreferencesKey("user_role")
+        private val KEY_ORG_ID = stringPreferencesKey("org_id")
+        private val KEY_ORG_NAME = stringPreferencesKey("org_name")
+        private val KEY_MUST_CHANGE_PWD = booleanPreferencesKey("must_change_password")
     }
 
-    suspend fun saveUser(user: UserModel) {
-        dataStore.edit { preferences ->
-            preferences[KEY_USER_ID] = user.uid
-            preferences[KEY_EMAIL] = user.email
-            preferences[KEY_NAME] = user.name
-            preferences[KEY_ROLE] = user.role.name
-            preferences[KEY_ORGANIZATION_ID] = user.organizationId
-            preferences[KEY_ORGANIZATION_NAME] = user.organizationName
+    val userFlow: Flow<UserModel?> = dataStore.data.map { prefs ->
+        val uid = prefs[KEY_UID]
+        if (uid.isNullOrEmpty()) {
+            null
+        } else {
+            UserModel(
+                uid = uid,
+                email = prefs[KEY_EMAIL] ?: "",
+                name = prefs[KEY_NAME] ?: "",
+                role = when (prefs[KEY_ROLE]) {
+                    "ADMIN" -> UserRole.ADMIN
+                    "WORKER" -> UserRole.WORKER
+                    else -> UserRole.WORKER
+                },
+                organizationId = prefs[KEY_ORG_ID] ?: "",
+                organizationName = prefs[KEY_ORG_NAME] ?: "",
+                mustChangePassword = prefs[KEY_MUST_CHANGE_PWD] ?: false
+            )
         }
     }
 
-    val userFlow: Flow<UserModel?> = dataStore.data.map { preferences ->
-        val userId = preferences[KEY_USER_ID]
-        val email = preferences[KEY_EMAIL]
-        val name = preferences[KEY_NAME]
-        val roleString = preferences[KEY_ROLE]
-        val orgId = preferences[KEY_ORGANIZATION_ID]
-        val orgName = preferences[KEY_ORGANIZATION_NAME]
-
-        if (userId != null && email != null && name != null && roleString != null && orgId != null && orgName != null) {
-            UserModel(
-                uid = userId,
-                email = email,
-                name = name,
-                role = UserRole.valueOf(roleString),
-                organizationId = orgId,
-                organizationName = orgName
-            )
-        } else {
-            null
+    suspend fun saveUser(user: UserModel) {
+        dataStore.edit { prefs ->
+            prefs[KEY_UID] = user.uid
+            prefs[KEY_EMAIL] = user.email
+            prefs[KEY_NAME] = user.name
+            prefs[KEY_ROLE] = user.role.name
+            prefs[KEY_ORG_ID] = user.organizationId
+            prefs[KEY_ORG_NAME] = user.organizationName
+            prefs[KEY_MUST_CHANGE_PWD] = user.mustChangePassword
         }
     }
 
     suspend fun clearUser() {
-        dataStore.edit { preferences ->
-            preferences.clear()
+        dataStore.edit { prefs ->
+            prefs.clear()
         }
     }
 }

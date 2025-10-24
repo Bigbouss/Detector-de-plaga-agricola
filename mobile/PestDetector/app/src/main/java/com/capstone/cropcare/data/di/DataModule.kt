@@ -17,11 +17,11 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class DataModule {
 
-    @Binds
-    @Singleton
-    abstract fun bindAuthRepository(
-        fakeAuthRepository: FakeAuthRepository
-    ): AuthRepository
+//    @Binds
+//    @Singleton
+//    abstract fun bindAuthRepository(
+//        authRepositoryImpl: AuthRepositoryImpl //
+//    ): AuthRepository
 
     @Binds
     @Singleton

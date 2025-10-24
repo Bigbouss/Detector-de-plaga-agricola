@@ -64,6 +64,10 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.compose.ui.text.google.fonts)
 
+    // OkHttp
+    implementation(libs.okhttp)
+    implementation(libs.logging.interceptor)
+
     //Navigation
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material3)
@@ -99,6 +103,8 @@ dependencies {
     implementation(libs.converter.gson)
 
     //DATAPREFERENCE
+    // Security para EncryptedSharedPreferences
+    implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.datastore.preferences)
 
     //Testing

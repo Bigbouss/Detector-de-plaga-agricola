@@ -32,6 +32,9 @@ class ZoneManagementViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ZoneManagementState())
     val uiState: StateFlow<ZoneManagementState> = _uiState.asStateFlow()
 
+    // 👇 NUEVO: Mapa de cultivos por zona para evitar recargas innecesarias
+    private val cropsCache = mutableMapOf<String, List<CropModel>>()
+
     init {
         loadZones()
     }
@@ -48,6 +51,11 @@ class ZoneManagementViewModel @Inject constructor(
                             isLoading = false
                         )
                     }
+
+                    // Recargar cultivos de todas las zonas
+                    zones.forEach { zone ->
+                        loadCropsForZone(zone.id)
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.update {
@@ -60,16 +68,33 @@ class ZoneManagementViewModel @Inject constructor(
         }
     }
 
-    fun selectZone(zone: ZoneModel) {
-        _uiState.update { it.copy(selectedZone = zone) }
-        loadCropsForZone(zone.id)
+    // 👇 NUEVO: Toggle expandir/colapsar zona
+    fun toggleZoneExpansion(zoneId: String) {
+        val currentExpanded = _uiState.value.expandedZoneIds.toMutableSet()
+
+        if (currentExpanded.contains(zoneId)) {
+            currentExpanded.remove(zoneId)
+        } else {
+            currentExpanded.add(zoneId)
+            // Cargar cultivos si no están en cache
+            if (!cropsCache.containsKey(zoneId)) {
+                loadCropsForZone(zoneId)
+            }
+        }
+
+        _uiState.update { it.copy(expandedZoneIds = currentExpanded) }
     }
 
     private fun loadCropsForZone(zoneId: String) {
         viewModelScope.launch {
             try {
                 getCropsByZoneUseCase(zoneId).collect { crops ->
-                    _uiState.update { it.copy(cropsInSelectedZone = crops) }
+                    cropsCache[zoneId] = crops
+
+                    // Actualizar el mapa de cultivos
+                    val updatedCropsMap = _uiState.value.cropsPerZone.toMutableMap()
+                    updatedCropsMap[zoneId] = crops
+                    _uiState.update { it.copy(cropsPerZone = updatedCropsMap) }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message) }
@@ -121,10 +146,11 @@ class ZoneManagementViewModel @Inject constructor(
                             isCreatingZone = false,
                             showCreateZoneDialog = false,
                             newZoneName = "",
-                            newZoneDescription = ""
+                            newZoneDescription = "",
+                            expandedZoneIds = setOf(zone.id) // 👈 Auto-expandir zona recién creada
                         )
                     }
-                    loadZones()
+                    // No necesitamos loadZones() porque el Flow se actualiza automáticamente
                 },
                 onFailure = { exception ->
                     _uiState.update {
@@ -138,11 +164,20 @@ class ZoneManagementViewModel @Inject constructor(
         }
     }
 
+    fun showZoneOptionsMenu(zone: ZoneModel) {
+        _uiState.update { it.copy(selectedZoneForMenu = zone) }
+    }
+
+    fun hideZoneOptionsMenu() {
+        _uiState.update { it.copy(selectedZoneForMenu = null) }
+    }
+
     fun showDeleteZoneDialog(zone: ZoneModel) {
         _uiState.update {
             it.copy(
                 showDeleteZoneDialog = true,
-                zoneToDelete = zone
+                zoneToDelete = zone,
+                selectedZoneForMenu = null // Cerrar menú
             )
         }
     }
@@ -166,16 +201,24 @@ class ZoneManagementViewModel @Inject constructor(
 
             result.fold(
                 onSuccess = {
+                    // Limpiar del cache
+                    cropsCache.remove(zone.id)
+
+                    val updatedCropsMap = _uiState.value.cropsPerZone.toMutableMap()
+                    updatedCropsMap.remove(zone.id)
+
+                    val updatedExpanded = _uiState.value.expandedZoneIds.toMutableSet()
+                    updatedExpanded.remove(zone.id)
+
                     _uiState.update {
                         it.copy(
                             isDeletingZone = false,
                             showDeleteZoneDialog = false,
                             zoneToDelete = null,
-                            selectedZone = null,
-                            cropsInSelectedZone = emptyList()
+                            cropsPerZone = updatedCropsMap,
+                            expandedZoneIds = updatedExpanded
                         )
                     }
-                    loadZones()
                 },
                 onFailure = { exception ->
                     _uiState.update {
@@ -189,11 +232,13 @@ class ZoneManagementViewModel @Inject constructor(
         }
     }
 
-    fun showAddCropDialog() {
+    fun showAddCropDialog(zone: ZoneModel) {
         _uiState.update {
             it.copy(
                 showAddCropDialog = true,
-                newCropName = ""
+                selectedZoneForCrop = zone,
+                newCropName = "",
+                selectedZoneForMenu = null // Cerrar menú
             )
         }
     }
@@ -202,6 +247,7 @@ class ZoneManagementViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 showAddCropDialog = false,
+                selectedZoneForCrop = null,
                 newCropName = ""
             )
         }
@@ -212,13 +258,23 @@ class ZoneManagementViewModel @Inject constructor(
     }
 
     fun addCropToZone() {
-        val zone = _uiState.value.selectedZone ?: return
+        val zone = _uiState.value.selectedZoneForCrop ?: return
+        val cropName = _uiState.value.newCropName.trim()
+
+        // 👇 Validar duplicados
+        val existingCrops = _uiState.value.cropsPerZone[zone.id] ?: emptyList()
+        if (existingCrops.any { it.name.equals(cropName, ignoreCase = true) }) {
+            _uiState.update {
+                it.copy(error = "Ya existe un cultivo con ese nombre en esta zona")
+            }
+            return
+        }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isAddingCrop = true, error = null) }
 
             val result = addCropToZoneUseCase(
-                cropName = _uiState.value.newCropName,
+                cropName = cropName,
                 zoneId = zone.id
             )
 
@@ -228,9 +284,12 @@ class ZoneManagementViewModel @Inject constructor(
                         it.copy(
                             isAddingCrop = false,
                             showAddCropDialog = false,
-                            newCropName = ""
+                            newCropName = "",
+                            selectedZoneForCrop = null,
+                            expandedZoneIds = it.expandedZoneIds + zone.id // 👈 Mantener expandida
                         )
                     }
+                    // El Flow de Room actualizará automáticamente
                 },
                 onFailure = { exception ->
                     _uiState.update {
@@ -279,6 +338,7 @@ class ZoneManagementViewModel @Inject constructor(
                             cropToDelete = null
                         )
                     }
+                    // El Flow actualizará automáticamente
                 },
                 onFailure = { exception ->
                     _uiState.update {
@@ -299,8 +359,8 @@ class ZoneManagementViewModel @Inject constructor(
 
 data class ZoneManagementState(
     val zones: List<ZoneModel> = emptyList(),
-    val selectedZone: ZoneModel? = null,
-    val cropsInSelectedZone: List<CropModel> = emptyList(),
+    val cropsPerZone: Map<String, List<CropModel>> = emptyMap(), // 👈 Mapa de cultivos por zona
+    val expandedZoneIds: Set<String> = emptySet(), // 👈 IDs de zonas expandidas
 
     // Loading states
     val isLoading: Boolean = false,
@@ -320,7 +380,9 @@ data class ZoneManagementState(
     val newZoneDescription: String = "",
     val newCropName: String = "",
 
-    // Delete confirmation
+    // Selected items
+    val selectedZoneForMenu: ZoneModel? = null, // 👈 Para menú de opciones
+    val selectedZoneForCrop: ZoneModel? = null, // 👈 Para agregar cultivo
     val zoneToDelete: ZoneModel? = null,
     val cropToDelete: CropModel? = null,
 

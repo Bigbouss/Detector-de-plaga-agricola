@@ -2,6 +2,12 @@
 
 package com.capstone.cropcare.view.adminViews.zoneManagement
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -68,9 +75,10 @@ fun ZoneManagementScreen(
     }
 
     // Add crop dialog
-    if (uiState.showAddCropDialog) {
+    if (uiState.showAddCropDialog && uiState.selectedZoneForCrop != null) {
         AddCropDialog(
             cropName = uiState.newCropName,
+            zoneName = uiState.selectedZoneForCrop!!.name,
             isAdding = uiState.isAddingCrop,
             onCropNameChanged = { zoneManagementViewModel.onNewCropNameChanged(it) },
             onConfirm = { zoneManagementViewModel.addCropToZone() },
@@ -124,41 +132,185 @@ fun ZoneManagementScreen(
                 onCreateZone = { zoneManagementViewModel.showCreateZoneDialog() }
             )
         } else {
-            Row(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Left: Zones list
-                ZonesList(
-                    zones = uiState.zones,
-                    selectedZone = uiState.selectedZone,
-                    onZoneSelected = { zoneManagementViewModel.selectZone(it) },
-                    onDeleteZone = { zoneManagementViewModel.showDeleteZoneDialog(it) },
-                    modifier = Modifier.weight(1f)
-                )
-
-                // Right: Crops in selected zone
-                if (uiState.selectedZone != null) {
-                    CropsList(
-                        zone = uiState.selectedZone!!,
-                        crops = uiState.cropsInSelectedZone,
-                        onAddCrop = { zoneManagementViewModel.showAddCropDialog() },
-                        onDeleteCrop = { zoneManagementViewModel.showDeleteCropDialog(it) },
-                        modifier = Modifier.weight(1f)
+                items(
+                    items = uiState.zones,
+                    key = { it.id }
+                ) { zone ->
+                    ExpandableZoneCard(
+                        zone = zone,
+                        crops = uiState.cropsPerZone[zone.id] ?: emptyList(),
+                        isExpanded = uiState.expandedZoneIds.contains(zone.id),
+                        showMenu = uiState.selectedZoneForMenu?.id == zone.id,
+                        onToggleExpand = { zoneManagementViewModel.toggleZoneExpansion(zone.id) },
+                        onShowMenu = { zoneManagementViewModel.showZoneOptionsMenu(zone) },
+                        onHideMenu = { zoneManagementViewModel.hideZoneOptionsMenu() },
+                        onAddCrop = { zoneManagementViewModel.showAddCropDialog(zone) },
+                        onDeleteZone = { zoneManagementViewModel.showDeleteZoneDialog(zone) },
+                        onDeleteCrop = { zoneManagementViewModel.showDeleteCropDialog(it) }
                     )
-                } else {
-                    Box(
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ExpandableZoneCard(
+    zone: ZoneModel,
+    crops: List<CropModel>,
+    isExpanded: Boolean,
+    showMenu: Boolean,
+    onToggleExpand: () -> Unit,
+    onShowMenu: () -> Unit,
+    onHideMenu: () -> Unit,
+    onAddCrop: () -> Unit,
+    onDeleteZone: () -> Unit,
+    onDeleteCrop: (CropModel) -> Unit
+) {
+    val rotationAngle by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        label = "rotation"
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Header de la zona
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onToggleExpand)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (isExpanded) "Colapsar" else "Expandir",
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
-                    ) {
+                            .size(24.dp)
+                            .rotate(rotationAngle),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(Modifier.width(12.dp))
+
+                    Column {
                         Text(
-                            text = "Selecciona una zona para ver sus cultivos",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = zone.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
+                        zone.description?.let { desc ->
+                            Text(
+                                text = desc,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        // Contador de cultivos
+                        Text(
+                            text = "${crops.size} cultivo(s)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                // Menú de opciones
+                Box {
+                    IconButton(onClick = onShowMenu) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Opciones"
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = onHideMenu
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Agregar cultivo") },
+                            onClick = onAddCrop,
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = Color(0xFF4CAF50)
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Eliminar zona") },
+                            onClick = onDeleteZone,
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Lista expandible de cultivos
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                ) {
+                    if (crops.isEmpty()) {
+                        // Estado vacío
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No hay cultivos en esta zona",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        // Lista de cultivos
+                        crops.forEach { crop ->
+                            CropItem(
+                                crop = crop,
+                                onDelete = { onDeleteCrop(crop) }
+                            )
+                            if (crop != crops.last()) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -167,6 +319,47 @@ fun ZoneManagementScreen(
 }
 
 @Composable
+fun CropItem(
+    crop: CropModel,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = null,
+                tint = Color(0xFF4CAF50),
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = crop.name,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        IconButton(
+            onClick = onDelete,
+            modifier = Modifier.size(36.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Eliminar",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}@Composable
 fun EmptyZonesState(
     modifier: Modifier = Modifier,
     onCreateZone: () -> Unit
@@ -193,7 +386,7 @@ fun EmptyZonesState(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Crea tu primera zona de cultivo",
+                text = "Crea tu primera zona de cultivo para comenzar",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -206,228 +399,6 @@ fun EmptyZonesState(
         }
     }
 }
-
-@Composable
-fun ZonesList(
-    zones: List<ZoneModel>,
-    selectedZone: ZoneModel?,
-    onZoneSelected: (ZoneModel) -> Unit,
-    onDeleteZone: (ZoneModel) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier.fillMaxHeight()) {
-        Surface(
-            color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Zonas (${zones.size})",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(zones) { zone ->
-                ZoneCard(
-                    zone = zone,
-                    isSelected = zone.id == selectedZone?.id,
-                    onClick = { onZoneSelected(zone) },
-                    onDelete = { onDeleteZone(zone) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun ZoneCard(
-    zone: ZoneModel,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    onDelete: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 4.dp else 2.dp
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = zone.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                zone.description?.let { desc ->
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            IconButton(
-                onClick = onDelete,
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(Icons.Default.Delete, "Eliminar")
-            }
-        }
-    }
-}
-
-@Composable
-fun CropsList(
-    zone: ZoneModel,
-    crops: List<CropModel>,
-    onAddCrop: () -> Unit,
-    onDeleteCrop: (CropModel) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier.fillMaxHeight()) {
-        Surface(
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Cultivos en ${zone.name}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "${crops.size} cultivo(s)",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                    )
-                }
-
-                IconButton(onClick = onAddCrop) {
-                    Icon(Icons.Default.Add, "Agregar cultivo")
-                }
-            }
-        }
-
-        if (crops.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(32.dp)
-                ) {
-                    Text(
-                        text = "No hay cultivos en esta zona",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = onAddCrop) {
-                        Icon(Icons.Default.Add, null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Agregar Cultivo")
-                    }
-                }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(crops) { crop ->
-                    CropCard(
-                        crop = crop,
-                        onDelete = { onDeleteCrop(crop) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun CropCard(
-    crop: CropModel,
-    onDelete: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = null,
-                    tint = Color(0xFF4CAF50),
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    text = crop.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            IconButton(
-                onClick = onDelete,
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(Icons.Default.Delete, "Eliminar", modifier = Modifier.size(20.dp))
-            }
-        }
-    }
-}
-
-// Dialogs continúan en el siguiente mensaje...
 
 @Composable
 fun CreateZoneDialog(
@@ -527,6 +498,7 @@ fun CreateZoneDialog(
 @Composable
 fun AddCropDialog(
     cropName: String,
+    zoneName: String,
     isAdding: Boolean,
     onCropNameChanged: (String) -> Unit,
     onConfirm: () -> Unit,
@@ -550,7 +522,7 @@ fun AddCropDialog(
         text = {
             Column {
                 Text(
-                    text = "Agrega un nuevo tipo de cultivo a esta zona",
+                    text = "Agrega un nuevo cultivo a $zoneName",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -583,24 +555,55 @@ fun AddCropDialog(
                     }
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
 
-                // Ejemplos comunes
+                // Sugerencias rápidas
                 Text(
-                    text = "Cultivos comunes:",
+                    text = "Sugerencias:",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(Modifier.height(4.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Spacer(Modifier.height(8.dp))
+
+                Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    listOf("Papas", "Tomates", "Maíz", "Trigo", "Lechugas", "Sandías").forEach { example ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         SuggestionChip(
-                            onClick = { onCropNameChanged(example) },
-                            label = { Text(example, style = MaterialTheme.typography.labelSmall) },
+                            onClick = { onCropNameChanged("Papas") },
+                            label = { Text("Papas", style = MaterialTheme.typography.labelSmall) },
+                            enabled = !isAdding
+                        )
+                        SuggestionChip(
+                            onClick = { onCropNameChanged("Tomates") },
+                            label = { Text("Tomates", style = MaterialTheme.typography.labelSmall) },
+                            enabled = !isAdding
+                        )
+                        SuggestionChip(
+                            onClick = { onCropNameChanged("Maíz") },
+                            label = { Text("Maíz", style = MaterialTheme.typography.labelSmall) },
+                            enabled = !isAdding
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SuggestionChip(
+                            onClick = { onCropNameChanged("Trigo") },
+                            label = { Text("Trigo", style = MaterialTheme.typography.labelSmall) },
+                            enabled = !isAdding
+                        )
+                        SuggestionChip(
+                            onClick = { onCropNameChanged("Lechugas") },
+                            label = { Text("Lechugas", style = MaterialTheme.typography.labelSmall) },
+                            enabled = !isAdding
+                        )
+                        SuggestionChip(
+                            onClick = { onCropNameChanged("Sandías") },
+                            label = { Text("Sandías", style = MaterialTheme.typography.labelSmall) },
                             enabled = !isAdding
                         )
                     }

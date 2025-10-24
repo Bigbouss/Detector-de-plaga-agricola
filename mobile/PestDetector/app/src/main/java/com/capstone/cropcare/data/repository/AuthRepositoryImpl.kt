@@ -21,31 +21,39 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun login(email: String, password: String): Result<UserModel> {
         return try {
-            val response = apiService.login(LoginRequest(email, password))
+            // 1. Obtener tokens con Djoser
+            val loginResponse = apiService.login(LoginRequest(email, password))
 
-            if (response.isSuccessful && response.body() != null) {
-                val authResponse = response.body()!!
-
-                // Guardar tokens
-                tokenManager.saveTokens(
-                    accessToken = authResponse.tokens.access,
-                    refreshToken = authResponse.tokens.refresh
-                )
-
-                // Guardar usuario
-                val user = authResponse.user.toDomain()
-                userPreferences.saveUser(user)
-
-                Log.d("AuthRepository", "✅ Login exitoso: ${user.email}")
-                Result.success(user)
-            } else {
-                val errorMsg = response.errorBody()?.string() ?: "Error desconocido"
+            if (!loginResponse.isSuccessful || loginResponse.body() == null) {
+                val errorMsg = loginResponse.errorBody()?.string() ?: "Error desconocido"
                 Log.e("AuthRepository", "❌ Login failed: $errorMsg")
-                Result.failure(Exception("Login failed: $errorMsg"))
+                return Result.failure(Exception("Credenciales inválidas"))
             }
+
+            val tokens = loginResponse.body()!!
+
+            // 2. Guardar tokens
+            tokenManager.saveTokens(
+                accessToken = tokens.access,
+                refreshToken = tokens.refresh
+            )
+
+            // 3. Obtener datos del usuario usando /me endpoint
+            val meResponse = apiService.getMe("Bearer ${tokens.access}")
+
+            if (!meResponse.isSuccessful || meResponse.body() == null) {
+                Log.e("AuthRepository", "❌ Error obteniendo datos del usuario")
+                return Result.failure(Exception("Error obteniendo información del usuario"))
+            }
+
+            val user = meResponse.body()!!.toDomain()
+            userPreferences.saveUser(user)
+
+            Log.d("AuthRepository", "✅ Login exitoso: ${user.email}")
+            Result.success(user)
         } catch (e: Exception) {
             Log.e("AuthRepository", "❌ Exception en login", e)
-            Result.failure(e)
+            Result.failure(Exception("Error de conexión. Verifica tu red."))
         }
     }
 
@@ -56,8 +64,12 @@ class AuthRepositoryImpl @Inject constructor(
         organizationName: String
     ): Result<UserModel> {
         return try {
+            val nameParts = name.split(" ", limit = 2)
+            val firstName = nameParts.getOrNull(0) ?: ""
+            val lastName = nameParts.getOrNull(1) ?: ""
+
             val response = apiService.registerAdmin(
-                RegisterAdminRequest(email, password, name, organizationName)
+                RegisterAdminRequest(email, password, firstName, lastName, organizationName)
             )
 
             if (response.isSuccessful && response.body() != null) {
@@ -68,7 +80,7 @@ class AuthRepositoryImpl @Inject constructor(
                     authResponse.tokens.refresh
                 )
 
-                val user = authResponse.user.toDomain()
+                val user = authResponse.toDomain()
                 userPreferences.saveUser(user)
 
                 Log.d("AuthRepository", "✅ Admin registrado: ${user.email}")
@@ -76,11 +88,11 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 val errorMsg = response.errorBody()?.string() ?: "Error en registro"
                 Log.e("AuthRepository", "❌ Register failed: $errorMsg")
-                Result.failure(Exception(errorMsg))
+                Result.failure(Exception("Error al registrar. Verifica los datos."))
             }
         } catch (e: Exception) {
             Log.e("AuthRepository", "❌ Exception en registro admin", e)
-            Result.failure(e)
+            Result.failure(Exception("Error de conexión. Verifica tu red."))
         }
     }
 
@@ -92,8 +104,12 @@ class AuthRepositoryImpl @Inject constructor(
         phoneNumber: String
     ): Result<UserModel> {
         return try {
+            val nameParts = name.split(" ", limit = 2)
+            val firstName = nameParts.getOrNull(0) ?: ""
+            val lastName = nameParts.getOrNull(1) ?: ""
+
             val response = apiService.registerWorker(
-                RegisterWorkerRequest(email, password, name, invitationCode)
+                RegisterWorkerRequest(email, password, firstName, lastName, invitationCode)
             )
 
             if (response.isSuccessful && response.body() != null) {
@@ -104,7 +120,7 @@ class AuthRepositoryImpl @Inject constructor(
                     authResponse.tokens.refresh
                 )
 
-                val user = authResponse.user.toDomain()
+                val user = authResponse.toDomain()
                 userPreferences.saveUser(user)
 
                 Log.d("AuthRepository", "✅ Worker registrado: ${user.email}")
@@ -112,14 +128,13 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 val errorMsg = response.errorBody()?.string() ?: "Error en registro"
                 Log.e("AuthRepository", "❌ Worker register failed: $errorMsg")
-                Result.failure(Exception(errorMsg))
+                Result.failure(Exception("Código inválido o error al registrar."))
             }
         } catch (e: Exception) {
             Log.e("AuthRepository", "❌ Exception en registro worker", e)
-            Result.failure(e)
+            Result.failure(Exception("Error de conexión. Verifica tu red."))
         }
     }
-
 
     override suspend fun validateInvitationCode(code: String): Result<String> {
         return try {
@@ -127,8 +142,8 @@ class AuthRepositoryImpl @Inject constructor(
 
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
-                if (body.valid && body.organization_name != null) {
-                    Result.success(body.organization_name)
+                if (body.valid && body.companyName != null) {
+                    Result.success(body.companyName)
                 } else {
                     Result.failure(Exception(body.error ?: "Código inválido"))
                 }
@@ -137,25 +152,18 @@ class AuthRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("AuthRepository", "❌ Exception validando código", e)
-            Result.failure(e)
+            Result.failure(Exception("Error de conexión. Verifica tu red."))
         }
     }
 
     override suspend fun logout(): Result<Unit> {
         return try {
-            val token = tokenManager.getAccessToken()
-            if (token != null) {
-                apiService.logout("Bearer $token")
-            }
-
             tokenManager.clearTokens()
             userPreferences.clearUser()
-
             Log.d("AuthRepository", "✅ Logout exitoso")
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e("AuthRepository", "❌ Error en logout", e)
-            // Igual limpiamos tokens localmente
             tokenManager.clearTokens()
             userPreferences.clearUser()
             Result.success(Unit)
