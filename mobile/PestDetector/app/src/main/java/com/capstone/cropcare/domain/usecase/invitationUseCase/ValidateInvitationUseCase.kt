@@ -7,7 +7,6 @@ class ValidateInvitationUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
     suspend operator fun invoke(code: String): Result<String> {
-        // Validaciones
         if (code.isBlank()) {
             return Result.failure(Exception("El código no puede estar vacío"))
         }
@@ -16,9 +15,6 @@ class ValidateInvitationUseCase @Inject constructor(
             return Result.failure(Exception("El código debe tener al menos 6 caracteres"))
         }
 
-        // El código puede tener letras y números, pero limpiamos espacios
-        val cleanCode = code.trim().uppercase()
-
-        return authRepository.validateInvitationCode(cleanCode)
+        return authRepository.validateInvitationCode(code)
     }
 }

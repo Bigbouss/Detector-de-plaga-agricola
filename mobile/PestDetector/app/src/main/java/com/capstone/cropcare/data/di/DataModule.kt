@@ -1,54 +1,25 @@
 package com.capstone.cropcare.data.di
 
-import com.capstone.cropcare.data.repository.AuthRepositoryImpl
-import com.capstone.cropcare.data.repository.FakeAuthRepository
-import com.capstone.cropcare.data.repository.FakeInvitationRepository
-import com.capstone.cropcare.domain.repository.AuthRepository
+
+import com.capstone.cropcare.data.remote.api.InvitationApiService
+import com.capstone.cropcare.data.repository.InvitationRepositoryImpl
 import com.capstone.cropcare.domain.repository.InvitationRepository
-import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class DataModule {
+object DataModule {
 
-//    @Binds
-//    @Singleton
-//    abstract fun bindAuthRepository(
-//        authRepositoryImpl: AuthRepositoryImpl //
-//    ): AuthRepository
-
-    @Binds
+    @Provides
     @Singleton
-    abstract fun bindInvitationRepository(
-        fakeInvitationRepository: FakeInvitationRepository
-    ): InvitationRepository
+    fun provideInvitationRepository(
+        apiService: InvitationApiService,
+        getCurrentUserUseCase: com.capstone.cropcare.domain.usecase.authUseCase.GetCurrentUserUseCase
+    ): InvitationRepository {
+        return InvitationRepositoryImpl(apiService, getCurrentUserUseCase)
+    }
 }
-//@Module
-//@InstallIn(SingletonComponent::class)
-//object AuthModule {
-//
-//    @Provides
-//    @Singleton
-//    fun provideAuthRepository(
-//        fakeAuthRepository: FakeAuthRepository // Fake
-//    ): AuthRepository {
-//        return fakeAuthRepository
-//    }
-//
-//    // 👇 Cuando tengas el backend real, cambia a:
-//    /*
-//    @Provides
-//    @Singleton
-//    fun provideAuthRepository(
-//        authRepositoryImpl: AuthRepositoryImpl
-//    ): AuthRepository {
-//        return authRepositoryImpl
-//    }
-//    */
-//}

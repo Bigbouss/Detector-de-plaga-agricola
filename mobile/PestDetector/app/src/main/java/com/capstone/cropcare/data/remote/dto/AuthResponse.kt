@@ -104,6 +104,8 @@ data class ValidateCodeResponse(
     val valid: Boolean,
     @SerializedName("company_name")
     val companyName: String? = null,
+    @SerializedName("empresa_id")
+    val empresaId: Int? = null,
     val error: String? = null
 )
 

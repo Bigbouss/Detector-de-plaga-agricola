@@ -3,10 +3,10 @@ package com.capstone.cropcare.data.di
 
 import com.capstone.cropcare.data.local.preferences.TokenManager
 import com.capstone.cropcare.data.remote.api.AuthApiService
+import com.capstone.cropcare.data.remote.api.InvitationApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -21,7 +21,6 @@ import javax.inject.Singleton
 object NetworkModule {
 
     const val BASE_URL = "http://192.168.2.114:8000/api/"
-
 
     @Provides @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor =
@@ -38,7 +37,7 @@ object NetworkModule {
                 val request = chain.request()
                 val token = tokenManager.getAccessToken()
                 val newRequest = if (token != null &&
-                    !request.url.encodedPath.contains("/auth/login") &&
+                    !request.url.encodedPath.contains("/auth/token") &&
                     !request.url.encodedPath.contains("/auth/register")) {
                     request.newBuilder()
                         .header("Authorization", "Bearer $token")
@@ -52,9 +51,9 @@ object NetworkModule {
             .build()
     }
 
+    // Retrofit compartido (ambos servicios usan el mismo)
     @Provides @Singleton
-    @Named("authRetrofit")
-    fun provideAuthRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
@@ -62,8 +61,15 @@ object NetworkModule {
             .build()
     }
 
+    // AuthApiService
     @Provides @Singleton
-    fun provideAuthApiService(@Named("authRetrofit") retrofit: Retrofit): AuthApiService {
+    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
+    }
+
+    // InvitationApiService
+    @Provides @Singleton
+    fun provideInvitationApiService(retrofit: Retrofit): InvitationApiService {
+        return retrofit.create(InvitationApiService::class.java)
     }
 }

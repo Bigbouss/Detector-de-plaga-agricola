@@ -27,8 +27,8 @@ interface AuthApiService {
         @Body request: RegisterWorkerRequest
     ): Response<AuthResponse>
 
-    // Validar código de invitación
-    @POST("orgs/invitations/validate/")
+    // Validar código de invitación+
+    @POST("orgs/join-codes/validate/")
     suspend fun validateInvitationCode(
         @Body request: ValidateCodeRequest
     ): Response<ValidateCodeResponse>

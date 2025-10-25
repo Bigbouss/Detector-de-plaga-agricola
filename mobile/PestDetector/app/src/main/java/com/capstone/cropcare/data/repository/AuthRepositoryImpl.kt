@@ -148,7 +148,9 @@ class AuthRepositoryImpl @Inject constructor(
                     Result.failure(Exception(body.error ?: "Código inválido"))
                 }
             } else {
-                Result.failure(Exception("Error validando código"))
+                val errorMsg = response.errorBody()?.string() ?: "Error validando código"
+                Log.e("AuthRepository", "❌ Validate code failed: $errorMsg")
+                Result.failure(Exception("Código inválido o expirado"))
             }
         } catch (e: Exception) {
             Log.e("AuthRepository", "❌ Exception validando código", e)
