@@ -81,6 +81,40 @@ class JoinCodeViewSet(
             empresa=self.request.user.profile.empresa
         ).order_by("-created_at")
 
+class ValidateJoinCodeView(APIView):
+    """
+    Validar un código de invitación sin autenticación (para el registro de workers).
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        code_str = request.data.get('code', '').strip().upper()
+
+        if not code_str:
+            return Response({
+                'valid': False,
+                'error': 'Código requerido'
+            }, status=400)
+
+        try:
+            jc = JoinCode.objects.select_related('empresa').get(code=code_str)
+        except JoinCode.DoesNotExist:
+            return Response({
+                'valid': False,
+                'error': 'Código no encontrado'
+            }, status=404)
+
+        if not jc.is_valid:
+            return Response({
+                'valid': False,
+                'error': 'Código expirado, revocado o sin cupos'
+            }, status=400)
+
+        return Response({
+            'valid': True,
+            'company_name': jc.empresa.name,
+            'empresa_id': jc.empresa.id
+        }, status=200)
 
 class CompanyWorkersViewSet(viewsets.ViewSet):
     """

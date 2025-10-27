@@ -16,6 +16,7 @@ from .views import (
     CompanyWorkersViewSet,
     MeView,
     JoinCompanyView,  # <-- añadido
+    ValidateJoinCodeView,
 )
 
 router = DefaultRouter()
@@ -34,6 +35,7 @@ urlpatterns = [
     path('auth/me/', MeView.as_view(), name='me'),
     # Unirse a empresa con código (usuario existente)
     path('auth/join-company/', JoinCompanyView.as_view(), name='join-company'),
+    path('join-codes/validate/', ValidateJoinCodeView.as_view(), name='validate_joincode'),
     # Recursos de empresa (códigos y lista/creación de trabajadores)
     path('', include(router.urls)),
 ]
