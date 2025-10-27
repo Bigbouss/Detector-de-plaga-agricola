@@ -1,6 +1,5 @@
 package com.capstone.cropcare.domain.model
 
-
 data class UserModel(
     val uid: String,
     val email: String,
@@ -8,9 +7,9 @@ data class UserModel(
     val role: UserRole,
     val organizationId: String,
     val organizationName: String,
-    val mustChangePassword: Boolean = false
+    val mustChangePassword: Boolean = false,
+    val phoneNumber: String? = null  // ← campo opcional
 )
-
 
 enum class UserRole {
     ADMIN,

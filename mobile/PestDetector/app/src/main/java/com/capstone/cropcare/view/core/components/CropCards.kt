@@ -18,10 +18,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -306,6 +314,141 @@ fun CropCardItemListWorker(
 
     }
 }
+
+//@Composable
+//fun CropCardItemListWorker(
+//    modifier: Modifier = Modifier,
+//    nameWorker: String,
+//    emailWorker: String,
+//    phoneNumber: String? = null,  // ← NUEVO parámetro opcional
+//    onDeleteClick: () -> Unit,
+//    onAssignZonesClick: () -> Unit
+//) {
+//    var showMenu by remember { mutableStateOf(false) }
+//
+//    Card(
+//        modifier = modifier
+//            .fillMaxWidth()
+//            .padding(horizontal = 14.dp)
+//            .padding(vertical = 5.dp)
+//    ) {
+//        Row(
+//            verticalAlignment = Alignment.CenterVertically,
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(end = 10.dp)
+//        ) {
+//            Box(
+//                modifier = Modifier
+//                    .padding(10.dp)
+//                    .size(50.dp)
+//                    .clip(CircleShape)
+//                    .background(MaterialTheme.colorScheme.primaryContainer),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                Text(
+//                    text = nameWorker.firstOrNull()?.uppercase() ?: "?",
+//                    style = MaterialTheme.typography.titleLarge,
+//                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+//                    fontWeight = FontWeight.Bold
+//                )
+//            }
+//
+//            Spacer(Modifier.width(15.dp))
+//
+//            Column(
+//                modifier = Modifier.padding(vertical = 5.dp),
+//                horizontalAlignment = Alignment.Start,
+//                verticalArrangement = Arrangement.Center
+//            ) {
+//                Text(
+//                    text = nameWorker,
+//                    style = MaterialTheme.typography.bodyLarge,
+//                    fontWeight = FontWeight.SemiBold
+//                )
+//                Spacer(Modifier.height(4.dp))
+//                Text(
+//                    text = emailWorker,
+//                    style = MaterialTheme.typography.bodySmall,
+//                    color = MaterialTheme.colorScheme.onSurfaceVariant
+//                )
+//
+//                // ← NUEVO: Mostrar teléfono si existe
+//                if (!phoneNumber.isNullOrEmpty()) {
+//                    Spacer(Modifier.height(2.dp))
+//                    Row(
+//                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//                        Icon(
+//                            painter = painterResource(R.drawable.ic_phone),
+//                            contentDescription = null,
+//                            modifier = Modifier.size(14.dp),
+//                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+//                        )
+//                        Spacer(Modifier.width(4.dp))
+//                        Text(
+//                            text = phoneNumber,
+//                            style = MaterialTheme.typography.bodySmall,
+//                            color = MaterialTheme.colorScheme.onSurfaceVariant
+//                        )
+//                    }
+//                }
+//            }
+//
+//            Spacer(modifier = Modifier.weight(1f))
+//
+//            Box {
+//                IconButton(onClick = { showMenu = true }) {
+//                    Icon(
+//                        painter = painterResource(R.drawable.ic_options_list),
+//                        contentDescription = "Opciones"
+//                    )
+//                }
+//
+//                DropdownMenu(
+//                    expanded = showMenu,
+//                    onDismissRequest = { showMenu = false }
+//                ) {
+//                    DropdownMenuItem(
+//                        text = { Text("Asignar zonas") },
+//                        onClick = {
+//                            showMenu = false
+//                            onAssignZonesClick()
+//                        },
+//                        leadingIcon = {
+//                            Icon(
+//                                painter = painterResource(R.drawable.ic_location),
+//                                contentDescription = null
+//                            )
+//                        }
+//                    )
+//
+//                    HorizontalDivider()
+//
+//                    DropdownMenuItem(
+//                        text = {
+//                            Text(
+//                                "Eliminar",
+//                                color = MaterialTheme.colorScheme.error
+//                            )
+//                        },
+//                        onClick = {
+//                            showMenu = false
+//                            onDeleteClick()
+//                        },
+//                        leadingIcon = {
+//                            Icon(
+//                                painter = painterResource(R.drawable.ic_delete),
+//                                contentDescription = null,
+//                                tint = MaterialTheme.colorScheme.error
+//                            )
+//                        }
+//                    )
+//                }
+//            }
+//        }
+//    }
+//}
 
 
 @Composable

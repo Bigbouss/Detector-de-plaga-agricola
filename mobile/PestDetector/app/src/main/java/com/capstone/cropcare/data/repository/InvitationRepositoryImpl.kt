@@ -28,9 +28,9 @@ class InvitationRepositoryImpl @Inject constructor(
             val currentUser = getCurrentUserUseCase()
                 ?: return Result.failure(Exception("Usuario no autenticado"))
 
-            // Calcular fecha de expiración
+            // Calcular fecha de expiración (1 día = 24 horas)
             val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
-            calendar.add(Calendar.DAY_OF_YEAR, expiresInDays)
+            calendar.add(Calendar.HOUR, 24 * expiresInDays)
 
             val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
                 timeZone = TimeZone.getTimeZone("UTC")

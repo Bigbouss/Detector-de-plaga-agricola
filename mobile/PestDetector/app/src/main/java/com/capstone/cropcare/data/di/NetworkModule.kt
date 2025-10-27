@@ -73,3 +73,91 @@ object NetworkModule {
         return retrofit.create(InvitationApiService::class.java)
     }
 }
+
+
+//package com.capstone.cropcare.data.di
+//
+//import com.capstone.cropcare.data.local.preferences.TokenManager
+//import com.capstone.cropcare.data.remote.api.AuthApiService
+//import com.capstone.cropcare.data.remote.api.InvitationApiService
+//import com.capstone.cropcare.data.remote.api.WorkerApiService
+//import dagger.Module
+//import dagger.Provides
+//import dagger.hilt.InstallIn
+//import dagger.hilt.components.SingletonComponent
+//import okhttp3.OkHttpClient
+//import okhttp3.logging.HttpLoggingInterceptor
+//import retrofit2.Retrofit
+//import retrofit2.converter.gson.GsonConverterFactory
+//import java.util.concurrent.TimeUnit
+//import javax.inject.Singleton
+//
+//@Module
+//@InstallIn(SingletonComponent::class)
+//object NetworkModule {
+//
+//    const val BASE_URL = "http://192.168.2.114:8000/api/"
+//
+//    @Provides
+//    @Singleton
+//    fun provideLoggingInterceptor(): HttpLoggingInterceptor =
+//        HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
+//
+//    @Provides
+//    @Singleton
+//    fun provideOkHttpClient(
+//        loggingInterceptor: HttpLoggingInterceptor,
+//        tokenManager: TokenManager
+//    ): OkHttpClient {
+//        return OkHttpClient.Builder()
+//            .addInterceptor(loggingInterceptor)
+//            .addInterceptor { chain ->
+//                val request = chain.request()
+//                val token = tokenManager.getAccessToken()
+//                val newRequest = if (token != null &&
+//                    !request.url.encodedPath.contains("/auth/token") &&
+//                    !request.url.encodedPath.contains("/auth/register")) {
+//                    request.newBuilder()
+//                        .header("Authorization", "Bearer $token")
+//                        .build()
+//                } else request
+//                chain.proceed(newRequest)
+//            }
+//            .connectTimeout(30, TimeUnit.SECONDS)
+//            .readTimeout(30, TimeUnit.SECONDS)
+//            .writeTimeout(30, TimeUnit.SECONDS)
+//            .build()
+//    }
+//
+//    // Retrofit compartido (todos los servicios usan el mismo)
+//    @Provides
+//    @Singleton
+//    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+//        return Retrofit.Builder()
+//            .baseUrl(BASE_URL)
+//            .client(okHttpClient)
+//            .addConverterFactory(GsonConverterFactory.create())
+//            .build()
+//    }
+//
+//    // ========== API SERVICES ==========
+//
+//    @Provides
+//    @Singleton
+//    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
+//        return retrofit.create(AuthApiService::class.java)
+//    }
+//
+//    @Provides
+//    @Singleton
+//    fun provideInvitationApiService(retrofit: Retrofit): InvitationApiService {
+//        return retrofit.create(InvitationApiService::class.java)
+//    }
+//
+//    // ← NUEVO: WorkerApiService
+//    @Provides
+//    @Singleton
+//    fun provideWorkerApiService(retrofit: Retrofit): WorkerApiService {
+//        return retrofit.create(WorkerApiService::class.java)
+//    }
+//}

@@ -98,7 +98,7 @@ data class InvitationState(
     val invitations: List<InvitationModel> = emptyList(),
     val isLoading: Boolean = false,
     val isGenerating: Boolean = false,
-    val selectedExpirationDays: Int = 7,
+    val selectedExpirationDays: Int = 1,
     val generatedInvitation: InvitationModel? = null,
     val showGeneratedDialog: Boolean = false,
     val error: String? = null

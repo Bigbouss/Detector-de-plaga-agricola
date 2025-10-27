@@ -15,7 +15,7 @@ data class CreateJoinCodeRequest(
 data class JoinCodeResponse(
     val id: Int,
     val code: String,
-    val empresa: Int,  // ← Cambié de EmpresaDto a Int (solo el ID)
+    val empresa: Int,
     val role: String,
     @SerializedName("max_uses")
     val maxUses: Int,
@@ -25,7 +25,9 @@ data class JoinCodeResponse(
     val expiresAt: String?,
     val revoked: Boolean,
     @SerializedName("created_at")
-    val createdAt: String
+    val createdAt: String,
+    @SerializedName("used_by_email")  // ← NUEVO
+    val usedByEmail: String? = null
 )
 
 data class JoinCodeListResponse(
