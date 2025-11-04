@@ -1,19 +1,15 @@
 package com.capstone.cropcare.view.core.navigation
 
-
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.capstone.cropcare.view.adminViews.invitationManagement.InvitationManagementScreen
 import com.capstone.cropcare.view.auth.other.SplashScreen
 import com.capstone.cropcare.view.auth.login.LoginScreen
 import com.capstone.cropcare.view.auth.register.admin.RegisterAdminScreen
 import com.capstone.cropcare.view.auth.register.worker.RegisterWorkerScreen
-
-
 
 @Composable
 fun NavigationWrapper(modifier: Modifier = Modifier) {
@@ -22,8 +18,6 @@ fun NavigationWrapper(modifier: Modifier = Modifier) {
     NavHost(
         navController = navController,
         startDestination = Splash
-        //startDestination = AdminFlow
-
     ) {
         // ========== SPLASH SCREEN ==========
         composable<Splash> {
@@ -46,7 +40,6 @@ fun NavigationWrapper(modifier: Modifier = Modifier) {
             )
         }
 
-
         // ========== AUTH FLOW ==========
         composable<Login> {
             LoginScreen(
@@ -56,12 +49,12 @@ fun NavigationWrapper(modifier: Modifier = Modifier) {
                 navigateToRegisterWorker = {
                     navController.navigate(RegisterWorker)
                 },
-                navigateToAdminHome = { // 👈 Nuevo
+                navigateToAdminHome = {
                     navController.navigate(AdminFlow) {
                         popUpTo(Login) { inclusive = true }
                     }
                 },
-                navigateToWorkerHome = { // 👈 Nuevo
+                navigateToWorkerHome = {
                     navController.navigate(WorkerFlow) {
                         popUpTo(Login) { inclusive = true }
                     }
@@ -96,15 +89,25 @@ fun NavigationWrapper(modifier: Modifier = Modifier) {
         }
 
         // ========== WORKER FLOW ==========
-        composable <WorkerFlow>{
-            FlowWorkerNavigation()
+        composable<WorkerFlow> {
+            FlowWorkerNavigation(
+                onLogoutSuccess = {
+                    navController.navigate(Login) {
+                        popUpTo(0) { inclusive = true } // Limpiar todo el stack
+                    }
+                }
+            )
         }
 
         // ========== ADMIN FLOW ==========
         composable<AdminFlow> {
-            FlowAdminNavigation()
+            FlowAdminNavigation(
+                onLogoutSuccess = {
+                    navController.navigate(Login) {
+                        popUpTo(0) { inclusive = true } // Limpiar todo el stack
+                    }
+                }
+            )
         }
-
-
     }
 }

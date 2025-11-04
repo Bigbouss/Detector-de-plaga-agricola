@@ -8,25 +8,19 @@ class AddCropToZoneUseCase @Inject constructor(
     private val cropZoneRepository: CropZoneRepository
 ) {
     suspend operator fun invoke(cropName: String, zoneId: String): Result<CropModel> {
+        // Validaciones
         if (cropName.isBlank()) {
             return Result.failure(Exception("El nombre del cultivo es requerido"))
         }
 
-        if (cropName.length < 3) {
-            return Result.failure(Exception("El nombre debe tener al menos 3 caracteres"))
+        if (cropName.length < 2) {
+            return Result.failure(Exception("El nombre debe tener al menos 2 caracteres"))
         }
 
-        val crop = CropModel(
-            id = "crop_${System.currentTimeMillis()}",
+        // ✅ CAMBIO: Llamar al backend
+        return cropZoneRepository.createCrop(
             name = cropName.trim(),
             zoneId = zoneId
         )
-
-        return try {
-            cropZoneRepository.insertCrop(crop)
-            Result.success(crop)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
     }
 }

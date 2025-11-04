@@ -4,10 +4,14 @@ import android.content.Context
 import androidx.room.Room
 import com.capstone.cropcare.data.local.dao.CropDao
 import com.capstone.cropcare.data.local.dao.ReportDao
+import com.capstone.cropcare.data.local.dao.WorkerZoneAssignmentDao
 import com.capstone.cropcare.data.local.dao.ZoneDao
 import com.capstone.cropcare.data.local.database.CropCareDatabase
+import com.capstone.cropcare.data.remote.api.WorkersApiService
+import com.capstone.cropcare.data.remote.api.ZonesApiService
 import com.capstone.cropcare.data.repository.CropZoneRepositoryImpl
 import com.capstone.cropcare.data.repository.ReportRepositoryImpl
+import com.capstone.cropcare.domain.repository.AuthRepository
 import com.capstone.cropcare.domain.repository.CropZoneRepository
 import com.capstone.cropcare.domain.repository.ReportRepository
 import dagger.Module
@@ -51,12 +55,26 @@ object DatabaseModule {
     }
 
     @Provides
+    fun provideWorkerZoneAssignmentDao(database: CropCareDatabase): WorkerZoneAssignmentDao {
+        return database.workerZoneAssignmentDao()
+    }
+
+    @Provides
     @Singleton
     fun provideCropZoneRepository(
         zoneDao: ZoneDao,
-        cropDao: CropDao
+        cropDao: CropDao,
+        zonesApiService: ZonesApiService,
+        workersApiService: WorkersApiService,  // ✅ Agregado
+        authRepository: AuthRepository          // ✅ Agregado
     ): CropZoneRepository {
-        return CropZoneRepositoryImpl(zoneDao, cropDao)
+        return CropZoneRepositoryImpl(
+            zoneDao = zoneDao,
+            cropDao = cropDao,
+            zonesApi = zonesApiService,
+            workersApi = workersApiService,     // ✅ Agregado
+            authRepository = authRepository     // ✅ Agregado
+        )
     }
 
     @Provides

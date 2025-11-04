@@ -258,63 +258,133 @@ fun CropCardItemList(
 
 }
 
+//@Composable
+//fun CropCardItemListWorker(
+//    modifier: Modifier = Modifier,
+//    nameWorker: String,
+//    emailWorker: String,
+//
+//
+//    ) {
+//
+//    Card(
+//        modifier = modifier
+//            .fillMaxWidth()
+//            .padding(horizontal = 14.dp)
+//            .padding(vertical = 5.dp)
+//
+//    ) {
+//
+//        Row(
+//            verticalAlignment = Alignment.CenterVertically,
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(end = 10.dp)
+//            ) {
+//            Box(
+//                modifier = Modifier
+//                    .padding(10.dp)
+//                    .size(50.dp)
+//                    .clip(CircleShape)
+//                    .background(Color.Red)
+//
+//
+//            ) {}
+//
+//            Spacer(Modifier.width(15.dp))
+//            Column(
+//                modifier = Modifier.padding(vertical = 5.dp),
+//                horizontalAlignment = Alignment.Start,
+//                verticalArrangement = Arrangement.Center
+//            ) {
+//
+//                CropTextListItemDescription(text = nameWorker)
+//                Spacer(Modifier.height(8.dp))
+//                CropTextListChips(text = emailWorker)
+//            }
+//            Spacer(modifier = Modifier.weight(1f))
+//
+//            Icon(
+//                painter = painterResource(R.drawable.ic_options_list),
+//                contentDescription = null
+//            )
+//
+//
+//        }
+//
+//    }
+//}
 @Composable
 fun CropCardItemListWorker(
     modifier: Modifier = Modifier,
     nameWorker: String,
     emailWorker: String,
-
-
-    ) {
-
+    onOptionsClick: () -> Unit = {}
+) {
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp)
             .padding(vertical = 5.dp)
-
     ) {
-
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(end = 10.dp)
-            ) {
+        ) {
+            // Avatar
             Box(
                 modifier = Modifier
                     .padding(10.dp)
                     .size(50.dp)
                     .clip(CircleShape)
-                    .background(Color.Red)
-
-
-            ) {}
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = nameWorker.firstOrNull()?.uppercase() ?: "W",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
             Spacer(Modifier.width(15.dp))
+
+            // Info
             Column(
-                modifier = Modifier.padding(vertical = 5.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 5.dp),
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Center
             ) {
-
-                CropTextListItemDescription(text = nameWorker)
-                Spacer(Modifier.height(8.dp))
-                CropTextListChips(text = emailWorker)
+                Text(
+                    text = nameWorker,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = emailWorker,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Spacer(modifier = Modifier.weight(1f))
 
-            Icon(
-                painter = painterResource(R.drawable.ic_options_list),
-                contentDescription = null
-            )
-
-
+            // Options button
+            IconButton(onClick = onOptionsClick) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_options_list),
+                    contentDescription = "Opciones",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
-
     }
 }
-
 //@Composable
 //fun CropCardItemListWorker(
 //    modifier: Modifier = Modifier,

@@ -57,3 +57,9 @@ object MetricsAdmin
 
 @Serializable
 object InvitationManagement
+
+@Serializable
+data class AssignZones(
+    val workerId: String,
+    val workerName: String
+)

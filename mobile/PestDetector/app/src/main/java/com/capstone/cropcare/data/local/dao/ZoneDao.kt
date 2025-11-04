@@ -22,6 +22,12 @@ interface ZoneDao {
     @Delete
     suspend fun deleteZone(zone: ZoneEntity)
 
+    @Query("DELETE FROM zones")
+    suspend fun deleteAll()
+
+    @Query("DELETE FROM zones WHERE zoneId = :zoneId")
+    suspend fun deleteZone(zoneId: String)
+
     @Transaction
     @Query("SELECT * FROM zones")
     fun getZonesWithCrops(): Flow<List<ZoneWithCrops>>

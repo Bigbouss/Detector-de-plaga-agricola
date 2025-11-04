@@ -21,6 +21,9 @@ interface CropDao {
     @Delete
     suspend fun deleteCrop(crop: CropEntity)
 
+    @Query("DELETE FROM crops")
+    suspend fun deleteAll()
+
     @Query("DELETE FROM crops WHERE zoneId = :zoneId")
     suspend fun deleteCropsByZone(zoneId: String)
 }
