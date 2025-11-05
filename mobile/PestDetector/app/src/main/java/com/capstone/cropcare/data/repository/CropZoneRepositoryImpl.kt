@@ -55,7 +55,7 @@ class CropZoneRepositoryImpl @Inject constructor(
         return zoneDao.getZoneById(zoneId)?.toDomain()
     }
 
-    // ==================== ZONAS - BACKEND ==================== ✅ NUEVO
+    // ==================== ZONAS - BACKEND ====================
 
     override suspend fun createZone(name: String, description: String?): Result<ZoneModel> {
         return try {
@@ -113,6 +113,47 @@ class CropZoneRepositoryImpl @Inject constructor(
     }
 
     // ==================== ZONAS - SINCRONIZACIÓN ====================
+
+    override suspend fun syncAllZonesFromBackend(): Result<Unit> {
+        return try {
+            Log.d("CropZoneRepo", "🔄 Sincronizando todas las zonas desde backend...")
+
+            val response = zonesApi.getZones()
+
+            if (response.isSuccessful && response.body() != null) {
+                val zonesFromBackend = response.body()!!
+
+                // Convertir a domain models
+                val zones = zonesFromBackend.map { it.toDomainZone() }
+
+                // Limpiar Room y reemplazar con datos del backend
+                zoneDao.deleteAll()
+                cropDao.deleteAll()
+
+                if (zones.isNotEmpty()) {
+                    zoneDao.insertZones(zones.map { it.toEntity() })
+                }
+
+                // Sincronizar cultivos de cada zona
+                zonesFromBackend.forEach { zoneResponse ->
+                    val crops = zoneResponse.toDomainCrops()
+                    if (crops.isNotEmpty()) {
+                        cropDao.insertCrops(crops.map { it.toEntity() })
+                    }
+                }
+
+                Log.d("CropZoneRepo", "✅ ${zones.size} zonas sincronizadas con sus cultivos")
+                Result.success(Unit)
+            } else {
+                val errorMsg = "Error al sincronizar: ${response.code()}"
+                Log.e("CropZoneRepo", "❌ $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("CropZoneRepo", "❌ Error sincronizando zonas", e)
+            Result.failure(e)
+        }
+    }
 
     override suspend fun getAssignedZonesForCurrentWorker(): Result<List<ZoneModel>> {
         return try {
@@ -188,8 +229,9 @@ class CropZoneRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteCrop(cropId: String) {
-        val entity = cropDao.getCropById(cropId)
-        entity?.let { cropDao.deleteCrop(it) }
+        cropDao.getCropById(cropId)?.let { entity ->
+            cropDao.deleteCrop(entity)
+        }
     }
 
     override fun getCropsByZone(zoneId: String): Flow<List<CropModel>> {
@@ -202,7 +244,7 @@ class CropZoneRepositoryImpl @Inject constructor(
         return cropDao.getCropById(cropId)?.toDomain()
     }
 
-    // ==================== CULTIVOS - BACKEND ==================== ✅ NUEVO
+    // ==================== CULTIVOS - BACKEND ====================
 
     override suspend fun createCrop(name: String, zoneId: String): Result<CropModel> {
         return try {
@@ -295,4 +337,6 @@ class CropZoneRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
+
+
 }

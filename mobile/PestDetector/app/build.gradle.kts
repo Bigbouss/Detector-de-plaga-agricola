@@ -107,6 +107,12 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.datastore.preferences)
 
+    // TensorFlow Lite
+    implementation(libs.tensorflow.lite)
+    implementation(libs.tensorflow.lite.support)
+    implementation(libs.tensorflow.lite.gpu)
+
+
     //Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capstone.cropcare.domain.model.ZoneModel
 import com.capstone.cropcare.domain.usecase.zoneUseCase.GetZonesUseCase
+import com.capstone.cropcare.domain.usecase.zoneUseCase.SyncZonesFromBackendUseCase
 import com.capstone.cropcare.domain.usecase.workerUseCase.AssignZonesToWorkerUseCase
 import com.capstone.cropcare.domain.usecase.workerUseCase.GetWorkerAssignedZonesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,7 +16,8 @@ import javax.inject.Inject
 class AssignZonesViewModel @Inject constructor(
     private val GetZonesUseCase: GetZonesUseCase,
     private val GetWorkerAssignedZonesUseCase: GetWorkerAssignedZonesUseCase,
-    private val assignZonesToWorkerUseCase: AssignZonesToWorkerUseCase
+    private val assignZonesToWorkerUseCase: AssignZonesToWorkerUseCase,
+    private val syncZonesFromBackendUseCase: SyncZonesFromBackendUseCase // 👈 NUEVO
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AssignZonesState())
@@ -28,7 +30,15 @@ class AssignZonesViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             try {
-                // Obtener listas de manera secuencial (sin collect anidado)
+                // 👇 NUEVO: Sincronizar desde backend primero
+                val syncResult = syncZonesFromBackendUseCase()
+
+                if (syncResult.isFailure) {
+                    // Si falla la sincronización, aún intentamos cargar datos locales
+                    android.util.Log.w("AssignZonesVM", "⚠️ No se pudo sincronizar, usando datos locales")
+                }
+
+                // Obtener listas de manera secuencial
                 val allZones = GetZonesUseCase().first()
                 val assignedZones = GetWorkerAssignedZonesUseCase(workerId).first()
 
@@ -53,8 +63,6 @@ class AssignZonesViewModel @Inject constructor(
             }
         }
     }
-
-
 
     fun toggleZoneSelection(zoneId: String) {
         val currentSelected = _uiState.value.selectedZoneIds
@@ -109,7 +117,6 @@ class AssignZonesViewModel @Inject constructor(
             )
         }
     }
-
 }
 
 data class AssignZonesState(
