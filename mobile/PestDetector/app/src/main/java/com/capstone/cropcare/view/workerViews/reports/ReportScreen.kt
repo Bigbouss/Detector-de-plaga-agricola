@@ -104,7 +104,16 @@ fun ReportScreenWorker(
                 reportViewModel.setLocalPhotoPath(it)
             }
         }
-        reportViewModel.setDiagnostic("Plaga detectada")
+        val info = analysisViewModel.diseaseInfo.value
+
+        val diagnosticText = when {
+            info == null -> "Sin información"
+            info.isHealthy -> "Planta saludable"
+            else -> info.diseaseName  // 🧠 Nombre real de la enfermedad
+        }
+
+        reportViewModel.setDiagnostic(diagnosticText)
+
     }
 
     Scaffold(

@@ -1,159 +1,173 @@
-//package com.capstone.cropcare.ml
-//
-//import android.content.Context
-//import android.graphics.Bitmap
-//import android.util.Log
-//import org.tensorflow.lite.Interpreter
-//import org.tensorflow.lite.support.common.FileUtil
-//import org.tensorflow.lite.support.image.TensorImage
-//import org.tensorflow.lite.support.image.ops.ResizeOp
-//import java.io.BufferedReader
-//import java.io.InputStreamReader
-//import java.nio.ByteBuffer
-//import java.nio.ByteOrder
-//
-//import kotlin.math.roundToInt
-//
-//data class Classification(
-//    val label: String,
-//    val confidence: Float
-//)
-//
-//class PlantDiseaseClassifier(private val context: Context) {
-//
-//    private var interpreter: Interpreter? = null
-//    private var labels: List<String> = emptyList()
-//
-//    // Configuración del modelo (ajusta según tu modelo)
-//    private val inputImageWidth = 224 // Cambia según tu modelo
-//    private val inputImageHeight = 224
-//    private val numClasses = 12 // 11 enfermedades + Unknown
-//
-//    companion object {
-//        private const val MODEL_PATH = "plant_model.tflite"
-//        private const val LABELS_PATH = "labels.txt"
-//        private const val TAG = "PlantDiseaseClassifier"
-//    }
-//
-//    init {
-//        setupInterpreter()
-//        loadLabels()
-//    }
-//
-//    private fun setupInterpreter() {
-//        try {
-//            val options = Interpreter.Options().apply {
-//                setNumThreads(4)
-//            }
-//
-//            val model = FileUtil.loadMappedFile(context, MODEL_PATH)
-//            interpreter = Interpreter(model, options)
-//
-//            // Verificar dimensiones del modelo
-//            val inputShape = interpreter?.getInputTensor(0)?.shape()
-//            val outputShape = interpreter?.getOutputTensor(0)?.shape()
-//
-//            Log.d(TAG, "Modelo cargado correctamente")
-//            Log.d(TAG, "Input shape: ${inputShape?.contentToString()}")
-//            Log.d(TAG, "Output shape: ${outputShape?.contentToString()}")
-//
-//        } catch (e: Exception) {
-//            Log.e(TAG, "Error cargando el modelo", e)
-//        }
-//    }
-//
-//    private fun loadLabels() {
-//        try {
-//            val inputStream = context.assets.open(LABELS_PATH)
-//            val reader = BufferedReader(InputStreamReader(inputStream))
-//            labels = reader.readLines()
-//            reader.close()
-//
-//            Log.d(TAG, "Labels cargados: ${labels.size} clases")
-//        } catch (e: Exception) {
-//            Log.e(TAG, "Error cargando labels", e)
-//        }
-//    }
-//
-//    fun classify(bitmap: Bitmap): Classification? {
-//        if (interpreter == null) {
-//            Log.e(TAG, "Interpreter no inicializado")
-//            return null
-//        }
-//
-//        try {
-//            // Preprocesar imagen
-//            val resizedBitmap = Bitmap.createScaledBitmap(
-//                bitmap,
-//                inputImageWidth,
-//                inputImageHeight,
-//                true
-//            )
-//
-//            // Convertir a ByteBuffer
-//            val inputBuffer = bitmapToByteBuffer(resizedBitmap)
-//
-//            // Preparar output
-//            val output = Array(1) { FloatArray(numClasses) }
-//
-//            // Ejecutar inferencia
-//            interpreter?.run(inputBuffer, output)
-//
-//            // Procesar resultados
-//            val results = output[0]
-//
-//            // Log de todas las predicciones
-//            Log.d(TAG, "=== Todas las predicciones ===")
-//            results.forEachIndexed { index, confidence ->
-//                if (confidence > 0.01f) { // Solo mostrar si > 1%
-//                    Log.d(TAG, "${labels.getOrNull(index)}: ${(confidence * 100).format(2)}%")
-//                }
-//            }
-//
-//            val maxIndex = results.indices.maxByOrNull { results[it] } ?: 0
-//            val confidence = results[maxIndex]
-//
-//            Log.d(TAG, "=== Resultado final ===")
-//            Log.d(TAG, "Clasificación: ${labels[maxIndex]} (${(confidence * 100).format(2)}%)")
-//
-//            return Classification(
-//                label = labels.getOrNull(maxIndex) ?: "Unknown",
-//                confidence = confidence
-//            )
-//
-//        } catch (e: Exception) {
-//            Log.e(TAG, "Error en clasificación", e)
-//            return null
-//        }
-//    }
-//
-//    private fun bitmapToByteBuffer(bitmap: Bitmap): ByteBuffer {
-//        val byteBuffer = ByteBuffer.allocateDirect(4 * inputImageWidth * inputImageHeight * 3)
-//        byteBuffer.order(ByteOrder.nativeOrder())
-//
-//        val intValues = IntArray(inputImageWidth * inputImageHeight)
-//        bitmap.getPixels(intValues, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-//
-//        var pixel = 0
-//        for (i in 0 until inputImageWidth) {
-//            for (j in 0 until inputImageHeight) {
-//                val value = intValues[pixel++]
-//
-//                // Normalización [0, 1] - igual que rescale=1./255 en Python
-//                byteBuffer.putFloat(((value shr 16 and 0xFF) / 255.0f))  // R
-//                byteBuffer.putFloat(((value shr 8 and 0xFF) / 255.0f))   // G
-//                byteBuffer.putFloat(((value and 0xFF) / 255.0f))         // B
-//            }
-//        }
-//
-//        return byteBuffer
-//    }
-//
-//    fun close() {
-//        interpreter?.close()
-//        interpreter = null
-//    }
-//}
-//
-//// Extension para formatear floats
-//private fun Float.format(decimals: Int): String = "%.${decimals}f".format(this)
+package com.capstone.cropcare.ml
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.util.Log
+import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.support.common.FileUtil
+import org.tensorflow.lite.support.common.ops.NormalizeOp
+import org.tensorflow.lite.support.image.ImageProcessor
+import org.tensorflow.lite.support.image.TensorImage
+import org.tensorflow.lite.support.image.ops.ResizeOp
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.nio.ByteBuffer
+
+/**
+ * Clasificador de plantas usando TensorFlow Lite
+ */
+class PlantClassifier(
+    private val context: Context,
+    private val cropType: String // "apple", "corn", "potato"
+) {
+    private var interpreter: Interpreter? = null
+    private var labels: List<String> = emptyList()
+
+    private val inputSize = 224 // Tamaño de entrada del modelo
+
+    // Procesador de imágenes
+    private val imageProcessor = ImageProcessor.Builder()
+        .add(ResizeOp(inputSize, inputSize, ResizeOp.ResizeMethod.BILINEAR))
+        .add(NormalizeOp(0f, 255f)) // Normaliza [0, 255] -> [0, 1]
+        .build()
+
+    init {
+        loadModel()
+        loadLabels()
+    }
+
+    /**
+     * Carga el modelo TFLite desde assets
+     */
+    private fun loadModel() {
+        try {
+            val modelPath = when (cropType.lowercase()) {
+                "manzanas", "apple" -> "models/AppleModel.tflite"
+                "maiz", "corn" -> "models/CornModel.tflite"
+                "papas", "potato" -> "models/PotatoModel.tflite"
+                else -> "models/AppleModel.tflite" // Default
+            }
+
+            val model = FileUtil.loadMappedFile(context, modelPath)
+            interpreter = Interpreter(model)
+
+            Log.d("PlantClassifier", "✅ Modelo cargado: $modelPath")
+        } catch (e: Exception) {
+            Log.e("PlantClassifier", "❌ Error cargando modelo", e)
+        }
+    }
+
+    /**
+     * Carga las etiquetas desde assets
+     */
+    private fun loadLabels() {
+        try {
+            val labelPath = when (cropType.lowercase()) {
+                "manzanas", "apple" -> "labels/AppleLabels.txt"
+                "maiz", "corn" -> "labels/CornLabels.txt"
+                "papas", "potato" -> "labels/PotatoLabels.txt"
+                else -> "labels/AppleLabels.txt" // Default
+            }
+
+            val reader = BufferedReader(InputStreamReader(context.assets.open(labelPath)))
+            labels = reader.readLines()
+            reader.close()
+
+            Log.d("PlantClassifier", "✅ Labels cargados: ${labels.size} clases")
+            Log.d("PlantClassifier", "Labels: $labels")
+        } catch (e: Exception) {
+            Log.e("PlantClassifier", "❌ Error cargando labels", e)
+        }
+    }
+
+    /**
+     * Clasifica una imagen de planta
+     */
+    fun classify(bitmap: Bitmap): ClassificationResult {
+        if (interpreter == null || labels.isEmpty()) {
+            return ClassificationResult(
+                label = "Error",
+                confidence = 0f,
+                isPlague = false,
+                allScores = emptyMap()
+            )
+        }
+
+        try {
+            // 1. Preprocesar imagen
+            val tensorImage = TensorImage.fromBitmap(bitmap)
+            val processedImage = imageProcessor.process(tensorImage)
+
+            // 2. Preparar salida
+            val outputArray = Array(1) { FloatArray(labels.size) }
+
+            // 3. Ejecutar inferencia
+            interpreter?.run(processedImage.buffer, outputArray)
+
+            // 4. Procesar resultados
+            val scores = outputArray[0]
+            val maxIndex = scores.indices.maxByOrNull { scores[it] } ?: 0
+            val maxScore = scores[maxIndex]
+            val predictedLabel = labels[maxIndex]
+
+            // 5. Determinar si es plaga
+            val isPlague = isPlaguePrediction(predictedLabel)
+
+            // Crear mapa de todas las predicciones
+            val allScores = labels.mapIndexed { index, label ->
+                label to scores[index]
+            }.toMap()
+
+            Log.d("PlantClassifier", "🔍 Predicción: $predictedLabel (${(maxScore * 100).toInt()}%)")
+            Log.d("PlantClassifier", "   Es plaga: $isPlague")
+
+            return ClassificationResult(
+                label = predictedLabel,
+                confidence = maxScore,
+                isPlague = isPlague,
+                allScores = allScores
+            )
+
+        } catch (e: Exception) {
+            Log.e("PlantClassifier", "❌ Error en clasificación", e)
+            return ClassificationResult(
+                label = "Error: ${e.message}",
+                confidence = 0f,
+                isPlague = false,
+                allScores = emptyMap()
+            )
+        }
+    }
+
+    /**
+     * Determina si una etiqueta corresponde a una plaga
+     */
+    private fun isPlaguePrediction(label: String): Boolean {
+        val healthyKeywords = listOf(
+            "healthy", "sano", "sana", "normal"
+        )
+
+        return !healthyKeywords.any { keyword ->
+            label.contains(keyword, ignoreCase = true)
+        }
+    }
+
+    /**
+     * Libera recursos
+     */
+    fun close() {
+        interpreter?.close()
+        interpreter = null
+        Log.d("PlantClassifier", "🔚 Clasificador cerrado")
+    }
+}
+
+/**
+ * Resultado de la clasificación
+ */
+data class ClassificationResult(
+    val label: String,
+    val confidence: Float,
+    val isPlague: Boolean,
+    val allScores: Map<String, Float> // Todas las predicciones con sus scores
+)

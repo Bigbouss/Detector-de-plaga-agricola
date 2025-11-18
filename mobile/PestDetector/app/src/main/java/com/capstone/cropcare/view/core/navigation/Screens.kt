@@ -63,3 +63,17 @@ data class AssignZones(
     val workerId: String,
     val workerName: String
 )
+
+@Serializable
+object ScanConfig
+
+@Serializable
+object ScanSession
+
+@Serializable
+object ScanZone
+
+@Serializable
+data class ScanCrop(val zoneId: String)
+
+

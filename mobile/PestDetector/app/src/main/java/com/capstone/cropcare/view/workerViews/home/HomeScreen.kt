@@ -68,7 +68,7 @@ import kotlin.collections.listOf
 @Composable
 fun HomeWorkerScreen(
     homeViewModel: HomeViewModel = hiltViewModel(),
-    //navigateToHistory: () -> Unit,
+    navigateToActivity: () -> Unit,
     navigateToCamera: () -> Unit,
 
     ) {
@@ -344,6 +344,7 @@ fun HomeWorkerScreen(
                             }
                         }
                     )
+
                 }
 
                 Box(
@@ -352,6 +353,15 @@ fun HomeWorkerScreen(
                         .height(300.dp),
                     contentAlignment = Alignment.Center
                 ) {
+                    Spacer(Modifier.height(10.dp))
+//                    CropButtonPrimary(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(vertical = 3.dp)
+//                            .padding(horizontal = 15.dp),
+//                        text = "aaaa",
+//                        onClick = {navigateToActivity()}
+//                    )
                     Icon(
                         painter = painterResource(R.drawable.ic_image_home),
                         contentDescription = "",

@@ -5,6 +5,7 @@ import com.capstone.cropcare.data.local.preferences.UserPreferences
 import com.capstone.cropcare.data.remote.api.AuthApiService
 import com.capstone.cropcare.data.repository.AuthRepositoryImpl
 import com.capstone.cropcare.domain.repository.AuthRepository
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,4 +25,5 @@ object RepositoryModule {
     ): AuthRepository {
         return AuthRepositoryImpl(apiService, tokenManager, userPreferences)
     }
+
 }

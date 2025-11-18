@@ -66,14 +66,23 @@ fun AnalysisScreen(
                         onButtonClick = { backToHome() }
                     )
 
-                    is AnalysisState.Bad -> AnalysisResultCard(
-                        title = stringResource(R.string.analysis_result_bad_title),
-                        description = stringResource(R.string.analysis_result_bad_description),
-                        buttonText = stringResource(R.string.analysis_result_report_button),
-                        iconRes = R.drawable.ic_plague_analysis,
-                        tint = Color.Unspecified,
-                        onButtonClick = { navigateToReport() }
-                    )
+                    is AnalysisState.Bad -> {
+                        val info by analysisViewModel.diseaseInfo.collectAsState()
+
+                        AnalysisResultCard(
+                            title = "Enfermedad Detectada",
+                            description = info?.let {
+                                "Cultivo: ${it.plantType}\n" +
+                                        "Enfermedad: ${it.diseaseName}\n" +
+                                        "Confianza: ${(it.confidence * 100).toInt()}%"
+                            } ?: stringResource(R.string.analysis_result_bad_description),
+                            buttonText = stringResource(R.string.analysis_result_report_button),
+                            iconRes = R.drawable.ic_plague_analysis,
+                            tint = Color.Unspecified,
+                            onButtonClick = { navigateToReport() }
+                        )
+                    }
+
 
                     is AnalysisState.TryAgain -> AnalysisResultCard(
                         title = stringResource(R.string.analysis_result_try_again_title),

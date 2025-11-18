@@ -1,12 +1,16 @@
 package com.capstone.cropcare.data.di
 
+//import com.capstone.cropcare.data.local.dao.ScanSessionDao
 import com.capstone.cropcare.data.local.dao.WorkerZoneAssignmentDao
 import com.capstone.cropcare.data.local.dao.ZoneDao
 import com.capstone.cropcare.data.remote.api.InvitationApiService
 import com.capstone.cropcare.data.remote.api.WorkersApiService
 import com.capstone.cropcare.data.repository.InvitationRepositoryImpl
+//import com.capstone.cropcare.data.repository.ScanSessionRepositoryImpl
+//import com.capstone.cropcare.domain.repository.ScanSessionRepository
 import com.capstone.cropcare.data.repository.WorkersRepositoryImpl
 import com.capstone.cropcare.domain.repository.InvitationRepository
+
 import com.capstone.cropcare.domain.repository.WorkersRepository
 import dagger.Module
 import dagger.Provides
@@ -36,4 +40,12 @@ object DataModule {
     ): WorkersRepository {
         return WorkersRepositoryImpl(apiService, assignmentDao, zoneDao)
     }
+
+//    @Provides
+//    @Singleton
+//    fun provideScanConfigRepository(
+//        scanSessionDao: ScanSessionDao
+//    ): ScanSessionRepository {
+//        return ScanSessionRepositoryImpl(scanSessionDao)
+//    }
 }

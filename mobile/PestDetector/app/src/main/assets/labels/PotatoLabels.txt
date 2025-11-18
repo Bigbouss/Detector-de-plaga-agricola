@@ -1,0 +1,3 @@
+Potato_Early_Blight
+Potato_Healthy
+Potato_Late_Blight

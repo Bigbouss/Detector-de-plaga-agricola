@@ -32,6 +32,10 @@ import com.capstone.cropcare.view.core.components.CropDrawerCustomState
 import com.capstone.cropcare.view.core.components.CropTopAppBar
 import com.capstone.cropcare.view.core.components.isOpened
 import com.capstone.cropcare.view.core.components.opposite
+import com.capstone.cropcare.view.testy.ScanCropScreen
+import com.capstone.cropcare.view.testy.ScanCropViewModel
+import com.capstone.cropcare.view.testy.ScanZoneScreen
+import com.capstone.cropcare.view.testy.ScanZoneViewModel
 import com.capstone.cropcare.view.workerViews.CameraScreen
 import com.capstone.cropcare.view.workerViews.analysisResult.AnalysisScreen
 import com.capstone.cropcare.view.workerViews.analysisResult.AnalysisViewModel
@@ -40,6 +44,7 @@ import com.capstone.cropcare.view.workerViews.homeHistory.HistoryViewModel
 import com.capstone.cropcare.view.workerViews.homeHistory.HomeHistoryScreen
 import com.capstone.cropcare.view.workerViews.reports.ReportScreenWorker
 import com.capstone.cropcare.view.workerViews.reports.ReportViewModel
+//import com.capstone.cropcare.view.workerViews.scanConfig.ScanConfigScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -60,13 +65,17 @@ fun FlowWorkerNavigation(
     // --- 🔹 Configuración de rutas ---
     val routesWithTopBar = listOf(
         HomeWorker::class.qualifiedName,
-        HomeHistory::class.qualifiedName
+        HomeHistory::class.qualifiedName,
+
+        //ScanConfig::class.qualifiedName
     )
     val routesWithBottomBar = routesWithTopBar
     val fullScreenRoutes = listOf(
         CamaraScreen::class.qualifiedName,
         AnalysisResultScreen::class.qualifiedName,
-        ReportScreen::class.qualifiedName
+        ReportScreen::class.qualifiedName,
+//        ScanZone::class.qualifiedName,     // <- AGREGAR
+//        ScanCrop::class.qualifiedName
     )
 
     val shouldShowTopBar = currentRoute in routesWithTopBar && currentRoute !in fullScreenRoutes
@@ -170,8 +179,14 @@ fun FlowWorkerNavigation(
             bottomBar = {
                 if (shouldShowBottomBar) {
                     val items = listOf(
-                        NavItems(context.getString(R.string.home_bottom_bar_home), R.drawable.ic_home),
-                        NavItems(context.getString(R.string.home_bottom_bar_history), R.drawable.ic_history)
+                        NavItems(
+                            context.getString(R.string.home_bottom_bar_home),
+                            R.drawable.ic_home
+                        ),
+                        NavItems(
+                            context.getString(R.string.home_bottom_bar_history),
+                            R.drawable.ic_history
+                        )
                     )
                     val selectedIndex = when (currentRoute) {
                         HomeWorker::class.qualifiedName -> 0
@@ -200,6 +215,142 @@ fun FlowWorkerNavigation(
                 }
             }
         ) { innerPadding ->
+//            NavHost(
+//                navController = navController,
+//                startDestination = HomeWorker,
+//                modifier = Modifier.padding(
+//                    when {
+//                        shouldShowTopBar && shouldShowBottomBar -> innerPadding
+//                        shouldShowTopBar -> PaddingValues(top = innerPadding.calculateTopPadding())
+//                        shouldShowBottomBar -> PaddingValues(bottom = innerPadding.calculateBottomPadding())
+//                        else -> PaddingValues(0.dp)
+//                    }
+//                )
+//            ) {
+//                composable<HomeWorker> {
+//                    HomeWorkerScreen(
+//                        navigateToCamera = { navController.navigate(ScanZone) },
+//                        navigateToActivity = { navController.navigate(ScanZone) }
+//                    )
+//
+//
+////                    HomeWorkerScreen(
+////                        navigateToCamera = { navController.navigate(CamaraScreen)} ,
+////                        navigateToActivity = { navController.navigate(ScanConfig) })
+//
+//                }
+//                composable<HomeHistory> {
+//                    val parentEntry =
+//                        remember(it) { navController.getBackStackEntry(HomeWorker::class) }
+//                    val historyViewModel: HistoryViewModel = hiltViewModel(parentEntry)
+//                    HomeHistoryScreen(homeHistoryViewModel = historyViewModel)
+//                }
+//
+//                composable<ScanZone> {
+//                    val zoneVM: ScanZoneViewModel = hiltViewModel()
+//
+//                    ScanZoneScreen(
+//                        viewModel = zoneVM,
+//                        onZoneSelected = { zoneId ->
+//                            navController.navigate(ScanCrop(zoneId))
+//                        }
+//                    )
+//                }
+//
+//                composable<ScanCrop> { entry ->
+//                    val zoneId = entry.arguments?.getString("zoneId")!!
+//                    val cropVM: ScanCropViewModel = hiltViewModel()
+//
+//                    // Obtenemos AnalysisViewModel del parent (HomeWorker)
+//                    val parentEntry =
+//                        remember(entry) { navController.getBackStackEntry(HomeWorker::class) }
+//                    val analysisVM: AnalysisViewModel = hiltViewModel(parentEntry)
+//
+//                    ScanCropScreen(
+//                        zoneId = zoneId,
+//                        viewModel = cropVM,
+//                        onCropSelected = { cropName ->
+//                            analysisVM.initClassifier(cropName) // 🔥 Carga modelo dinámico
+//                            navController.navigate(CamaraScreen)
+//                        }
+//                    )
+//
+//
+//                    composable<CamaraScreen> {
+//                        val parentEntry =
+//                            remember(it) { navController.getBackStackEntry(HomeWorker::class) }
+//                        val analysisViewModel: AnalysisViewModel = hiltViewModel(parentEntry)
+//
+//                        CameraScreen(onPhotoTaken = { bitmap ->
+//                            analysisViewModel.analyzePhoto(bitmap)
+//                            navController.navigate(AnalysisResultScreen)
+//                        })
+//                    }
+//
+//
+////                composable<CamaraScreen> {
+////                    val parentEntry = remember(it) { navController.getBackStackEntry(HomeWorker::class) }
+////                    val analysisViewModel: AnalysisViewModel = hiltViewModel(parentEntry)
+////
+////                    LaunchedEffect(Unit) {
+////                        analysisViewModel.initClassifier("corn")   // <- usa el modelo que vayas a probar hoy
+////                    }
+////
+////                    CameraScreen(onPhotoTaken = { bitmap ->
+////                        analysisViewModel.analyzePhoto(bitmap)
+////                        navController.navigate(AnalysisResultScreen)
+////                    })
+////                }
+//                    composable<AnalysisResultScreen> {
+//                        val parentEntry =
+//                            remember(it) { navController.getBackStackEntry(HomeWorker::class) }
+//                        val analysisViewModel: AnalysisViewModel = hiltViewModel(parentEntry)
+//                        AnalysisScreen(
+//                            analysisViewModel = analysisViewModel,
+//                            navigateToReport = { navController.navigate(ReportScreen) },
+//                            backToHome = {
+//                                analysisViewModel.reset()
+//                                navController.navigate(HomeWorker) {
+//                                    popUpTo(HomeWorker) { inclusive = false }
+//                                }
+//                            },
+//                            backToCamera = {
+//                                analysisViewModel.reset()
+//                                navController.popBackStack()
+//                            }
+//                        )
+//                    }
+//
+//                    //
+////                composable<ScanConfig>{
+////                    ScanConfigScreen(
+////                        navigateToScanning = {
+////                            navController.navigate(ScanSession) {
+////                                popUpTo(ScanConfig) { inclusive = false }
+////                            }
+////                        }
+////                    ) {}
+////                }
+//                    //
+//                    composable<ReportScreen> {
+//                        val parentEntry =
+//                            remember(it) { navController.getBackStackEntry(HomeWorker::class) }
+//                        val analysisViewModel: AnalysisViewModel = hiltViewModel(parentEntry)
+//                        val reportViewModel: ReportViewModel = hiltViewModel()
+//                        ReportScreenWorker(
+//                            reportViewModel = reportViewModel,
+//                            analysisViewModel = analysisViewModel,
+//                            backToHome = {
+//                                analysisViewModel.clearTemporaryImage()
+//                                analysisViewModel.reset()
+//                                navController.navigate(HomeWorker) {
+//                                    popUpTo(HomeWorker) { inclusive = false }
+//                                }
+//                            }
+//                        )
+//                    }
+//                }
+//            }
             NavHost(
                 navController = navController,
                 startDestination = HomeWorker,
@@ -212,25 +363,82 @@ fun FlowWorkerNavigation(
                     }
                 )
             ) {
+
+                // -------------------------
+                // HOME SCREEN
+                // -------------------------
                 composable<HomeWorker> {
-                    HomeWorkerScreen(navigateToCamera = { navController.navigate(CamaraScreen) })
+                    HomeWorkerScreen(
+                        navigateToCamera = { navController.navigate(ScanZone) },
+                        navigateToActivity = { navController.navigate(ScanZone) }
+                    )
                 }
+
+                // -------------------------
+                // HISTORY
+                // -------------------------
                 composable<HomeHistory> {
                     val parentEntry = remember(it) { navController.getBackStackEntry(HomeWorker::class) }
                     val historyViewModel: HistoryViewModel = hiltViewModel(parentEntry)
                     HomeHistoryScreen(homeHistoryViewModel = historyViewModel)
                 }
+
+                // -------------------------
+                // SELECT ZONE
+                // -------------------------
+                composable<ScanZone> {
+                    val zoneVM: ScanZoneViewModel = hiltViewModel()
+                    ScanZoneScreen(
+                        viewModel = zoneVM,
+                        onZoneSelected = { zoneId ->
+                            navController.navigate(ScanCrop(zoneId))
+                        }
+                    )
+                }
+
+                // -------------------------
+                // SELECT CROP
+                // -------------------------
+                composable<ScanCrop> { entry ->
+                    val zoneId = entry.arguments?.getString("zoneId")!!
+                    val cropVM: ScanCropViewModel = hiltViewModel()
+
+                    // Obtenemos el AnalysisVM desde HomeWorker para que sobreviva
+                    val parentEntry = remember(entry) { navController.getBackStackEntry(HomeWorker::class) }
+                    val analysisVM: AnalysisViewModel = hiltViewModel(parentEntry)
+
+                    ScanCropScreen(
+                        zoneId = zoneId,
+                        viewModel = cropVM,
+                        onCropSelected = { cropName ->
+                            analysisVM.initClassifier(cropName)
+                            navController.navigate(CamaraScreen)
+                        }
+                    )
+                }
+
+                // -------------------------
+                // CAMERA SCREEN
+                // -------------------------
                 composable<CamaraScreen> {
                     val parentEntry = remember(it) { navController.getBackStackEntry(HomeWorker::class) }
                     val analysisViewModel: AnalysisViewModel = hiltViewModel(parentEntry)
-                    CameraScreen(onPhotoTaken = { bitmap ->
-                        analysisViewModel.analyzePhoto(bitmap)
-                        navController.navigate(AnalysisResultScreen)
-                    })
+
+                    CameraScreen(
+                        onPhotoTaken = { bitmap ->
+                            analysisViewModel.analyzePhoto(bitmap)
+                            navController.navigate(AnalysisResultScreen)
+                        }
+                    )
                 }
+
+                // -------------------------
+                // ANALYSIS RESULT
+                // -------------------------
                 composable<AnalysisResultScreen> {
                     val parentEntry = remember(it) { navController.getBackStackEntry(HomeWorker::class) }
                     val analysisViewModel: AnalysisViewModel = hiltViewModel(parentEntry)
+
                     AnalysisScreen(
                         analysisViewModel = analysisViewModel,
                         navigateToReport = { navController.navigate(ReportScreen) },
@@ -246,10 +454,15 @@ fun FlowWorkerNavigation(
                         }
                     )
                 }
+
+                // -------------------------
+                // REPORT
+                // -------------------------
                 composable<ReportScreen> {
                     val parentEntry = remember(it) { navController.getBackStackEntry(HomeWorker::class) }
                     val analysisViewModel: AnalysisViewModel = hiltViewModel(parentEntry)
                     val reportViewModel: ReportViewModel = hiltViewModel()
+
                     ReportScreenWorker(
                         reportViewModel = reportViewModel,
                         analysisViewModel = analysisViewModel,
@@ -263,52 +476,50 @@ fun FlowWorkerNavigation(
                     )
                 }
             }
-        }
 
-        // --- 🔹 Overlay oscuro + Drawer ---
-        if (drawerState.isOpened()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) {
-                        drawerState = CropDrawerCustomState.Closed
-                    }
-            ) {
-                // Drawer
+
+            // --- 🔹 Overlay oscuro + Drawer ---
+            if (drawerState.isOpened()) {
                 Box(
                     modifier = Modifier
-                        .align(Alignment.CenterEnd)
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f))
                         .clickable(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
-                        ) { /* consume clicks */ }
-                ) {
-                    CropDrawer(
-                        selectedDrawerNavigationItem = selectedDrawerItem,
-                        onNavigationItemClick = {
-                            selectedDrawerItem = it
-                            if (it == DrawerItem.Profile) {
-                                
-                                authViewModel.logout()
-                                drawerState = CropDrawerCustomState.Closed
-                            }
+                        ) {
                             drawerState = CropDrawerCustomState.Closed
-                        },
-                        onCloseClick = { drawerState = CropDrawerCustomState.Closed }
-                    )
-                }
+                        }
+                ) {
+                    // Drawer
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) { /* consume clicks */ }
+                    ) {
+                        CropDrawer(
+                            selectedDrawerNavigationItem = selectedDrawerItem,
+                            onNavigationItemClick = {
+                                selectedDrawerItem = it
+                                if (it == DrawerItem.Profile) {
 
-                // 👇 BackHandler local (prioritario sobre el global)
-                BackHandler(enabled = true) {
-                    drawerState = CropDrawerCustomState.Closed
+                                    authViewModel.logout()
+                                    drawerState = CropDrawerCustomState.Closed
+                                }
+                                drawerState = CropDrawerCustomState.Closed
+                            },
+                            onCloseClick = { drawerState = CropDrawerCustomState.Closed }
+                        )
+                    }
+
+                    // 👇 BackHandler local (prioritario sobre el global)
+                    BackHandler(enabled = true) {
+                        drawerState = CropDrawerCustomState.Closed
+                    }
                 }
             }
         }
-    }
-}
-
-
+    }}

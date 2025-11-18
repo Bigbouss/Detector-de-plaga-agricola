@@ -4,10 +4,12 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.capstone.cropcare.data.local.dao.CropDao
 import com.capstone.cropcare.data.local.dao.ReportDao
+//import com.capstone.cropcare.data.local.dao.ScanSessionDao
 import com.capstone.cropcare.data.local.dao.WorkerZoneAssignmentDao
 import com.capstone.cropcare.data.local.dao.ZoneDao
 import com.capstone.cropcare.data.local.entity.CropEntity
 import com.capstone.cropcare.data.local.entity.ReportEntity
+//import com.capstone.cropcare.data.local.entity.ScanSessionEntity
 import com.capstone.cropcare.data.local.entity.WorkerZoneAssignmentEntity
 import com.capstone.cropcare.data.local.entity.ZoneEntity
 
@@ -16,9 +18,10 @@ import com.capstone.cropcare.data.local.entity.ZoneEntity
         ZoneEntity::class,
         CropEntity::class,
         ReportEntity::class,
-        WorkerZoneAssignmentEntity::class
+        WorkerZoneAssignmentEntity::class,
+       // ScanSessionEntity::class
     ],
-    version = 2,
+    version = 4,
     exportSchema = false
 )
 abstract class CropCareDatabase : RoomDatabase() {
@@ -26,4 +29,6 @@ abstract class CropCareDatabase : RoomDatabase() {
     abstract fun cropDao(): CropDao
     abstract fun reportDao(): ReportDao
     abstract fun workerZoneAssignmentDao(): WorkerZoneAssignmentDao
+
+//    abstract fun scanSessionDao(): ScanSessionDao
 }

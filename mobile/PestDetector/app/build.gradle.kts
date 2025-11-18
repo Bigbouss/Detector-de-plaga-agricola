@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.AaptOptions
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -10,6 +12,11 @@ plugins {
 android {
     namespace = "com.capstone.cropcare"
     compileSdk = 36
+    aaptOptions {
+        noCompress("tflite")
+        noCompress("lite")
+    }
+    //
 
     defaultConfig {
         applicationId = "com.capstone.cropcare"

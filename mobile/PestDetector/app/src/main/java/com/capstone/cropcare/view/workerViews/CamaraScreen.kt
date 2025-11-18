@@ -34,6 +34,9 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import java.util.concurrent.Executor
 import android.util.Log
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.capstone.cropcare.view.workerViews.analysisResult.AnalysisViewModel
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -44,6 +47,12 @@ fun CameraScreen(
     val context = LocalContext.current
     val cameraController = remember { LifecycleCameraController(context) }
     val lifecycle = LocalLifecycleOwner.current
+
+    val analysisViewModel: AnalysisViewModel = hiltViewModel()
+    // 🔥 INICIALIZA EL MODELO AQUÍ
+//    LaunchedEffect(Unit) {
+//        analysisViewModel.initClassifier("corn")   // Cambia por el modelo que quieras probar
+//    }
 
     //Limpiar la cámara cuando el Composable se destruya
     DisposableEffect(cameraController) {

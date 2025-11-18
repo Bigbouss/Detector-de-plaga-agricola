@@ -20,7 +20,7 @@ class ReportRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateReport(report: ReportModel) {
-        reportDao.updateReport(report.toEntity())
+        reportDao.updateReport( report.toEntity())
     }
 
     override suspend fun deleteReport(report: ReportModel) {

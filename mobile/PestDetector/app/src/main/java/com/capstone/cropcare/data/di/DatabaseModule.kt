@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.capstone.cropcare.data.local.dao.CropDao
 import com.capstone.cropcare.data.local.dao.ReportDao
+//import com.capstone.cropcare.data.local.dao.ScanSessionDao
 import com.capstone.cropcare.data.local.dao.WorkerZoneAssignmentDao
 import com.capstone.cropcare.data.local.dao.ZoneDao
 import com.capstone.cropcare.data.local.database.CropCareDatabase
@@ -84,4 +85,10 @@ object DatabaseModule {
     ): ReportRepository {
         return ReportRepositoryImpl(reportDao)
     }
+
+//    @Provides
+//    @Singleton
+//    fun provideScanSessionDao(database: CropCareDatabase): ScanSessionDao {
+//        return database.scanSessionDao()
+//    }
 }
