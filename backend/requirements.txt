@@ -3,32 +3,41 @@
 # -----------------------------
 
 # --- Framework web y API ---
-Django~=5.2.6                      # Framework principal (tu versión actual 5.2.6)
-djangorestframework~=3.16.1        # API REST (compatible con Django 5.x)
-django-filter~=24.3                # Búsquedas/filtrado en DRF
-django-cors-headers~=4.9.0         # CORS para frontend/mobile
+Django~=5.2.8
+djangorestframework~=3.16.1
+django-filter~=24.3
+django-cors-headers~=4.9.0
 
 # --- Autenticación (JWT) ---
-djangorestframework-simplejwt~=5.5.1  # Issuance/verify/refresh tokens
+djangorestframework-simplejwt~=5.5.1
+Faker==38.0.0
 
-# --- OpenAPI / Documentación ---
-drf-spectacular~=0.27.2            # Generación del esquema OpenAPI 3
-drf-spectacular-sidecar~=2025.9.1  # Assets de Swagger/Redoc (estáticos empaquetados)
+# --- Documentación API ---
+drf-spectacular~=0.27.2
+drf-spectacular-sidecar~=2025.9.1
 
-# --- Config & archivos ---
-django-environ~=0.12.0             # Variables entorno (.env) para settings
-pillow~=11.3.0                     # Imágenes (PIL)
+# --- Configuración y archivos ---
+django-environ~=0.12.0
+pillow~=11.3.0                   # Imágenes
+psycopg[binary]~=3.2.10          # PostgreSQL (para cuando cambies)
+sqlparse~=0.5.3
+typing_extensions~=4.15.0
 
-# --- Base de datos ---
-psycopg[binary]~=3.2.10            # Driver PostgreSQL (binario práctico)
+# --- Tareas asíncronas (para más adelante) ---
+celery~=5.4.0
+redis~=5.1.1
 
-# --- Utilidades de Django ---
-sqlparse~=0.5.3                    # Requerido por Django en varias tareas
-typing_extensions~=4.15.0          # Compatibilidad de typing en Py3.12 (safe)
+# --- S3 Storage ---
+boto3~=1.35.80
+django-storages~=1.14.3
 
-# Nota:
-# - Las dependencias transitivas (jsonschema, referencing, rpds-py, uritemplate, etc.)
-#   las instalará pip automáticamente a través de drf-spectacular y otras libs.
-# - Si más adelante despliegas en servidor, puedes añadir:
-#     gunicorn>=21,<23
-#     whitenoise>=6,<7
+# --- Despliegue (futuro) ---
+whitenoise~=6.8.2
+gunicorn~=22.0.0
+
+# aplicaciónes que se instalan fuera pero que son importantes para instalar el postgreSQL
+#python3-dev
+#libpq-dev
+#build-essential
+psycopg2
+reportlab==4.0.7
