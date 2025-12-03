@@ -13,34 +13,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-//@HiltViewModel
-//class HistoryViewModel @Inject constructor(
-//    private val getReportHistoryUseCase: GetReportHistoryUseCase
-//) : ViewModel() {
-//
-//    private val _reports = MutableStateFlow<List<ReportModel>>(emptyList())
-//    val reports: StateFlow<List<ReportModel>> = _reports.asStateFlow()
-//
-//    init {
-//        loadReports()
-//    }
-//
-//    private fun loadReports() {
-//        viewModelScope.launch {
-//            getReportHistoryUseCase().collect { list ->
-//                _reports.value = list
-//            }
-//        }
-//    }
-//}
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     private val reportRepository: ReportRepository
 ) : ViewModel() {
 
-    private val _reports = MutableStateFlow<List<ReportModel>>(emptyList()) // 👈 Cambió de ReportModel a Report
-    val reports: StateFlow<List<ReportModel>> = _reports.asStateFlow()
+    private val _groups = MutableStateFlow<List<ReportSessionGroup>>(emptyList())
+    val groups: StateFlow<List<ReportSessionGroup>> = _groups.asStateFlow()
 
     init {
         loadReports()
@@ -49,7 +28,23 @@ class HistoryViewModel @Inject constructor(
     private fun loadReports() {
         viewModelScope.launch {
             reportRepository.getAllReports().collect { reportList ->
-                _reports.value = reportList
+
+                // Agrupamos por sessionId (null incluido)
+                val grouped = reportList
+                    .groupBy { it.sessionId }
+                    .map { (sessionId, reports) ->
+                        val first = reports.first()
+
+                        ReportSessionGroup(
+                            sessionId = sessionId,
+                            title = "${first.zone.name} - ${first.crop.name}",
+                            date = reports.minOf { it.timestamp },
+                            reports = reports.sortedByDescending { it.timestamp }
+                        )
+                    }
+                    .sortedByDescending { it.date }
+
+                _groups.value = grouped
             }
         }
     }
@@ -65,3 +60,10 @@ class HistoryViewModel @Inject constructor(
         }
     }
 }
+
+data class ReportSessionGroup(
+    val sessionId: String?,
+    val title: String,
+    val date: Long,
+    val reports: List<ReportModel>
+)

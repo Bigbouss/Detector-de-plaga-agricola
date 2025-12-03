@@ -14,10 +14,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AssignZonesViewModel @Inject constructor(
-    private val GetZonesUseCase: GetZonesUseCase,
-    private val GetWorkerAssignedZonesUseCase: GetWorkerAssignedZonesUseCase,
+    private val getZonesUseCase: GetZonesUseCase,
+    private val getWorkerAssignedZonesUseCase: GetWorkerAssignedZonesUseCase,
     private val assignZonesToWorkerUseCase: AssignZonesToWorkerUseCase,
-    private val syncZonesFromBackendUseCase: SyncZonesFromBackendUseCase // 👈 NUEVO
+    private val syncZonesFromBackendUseCase: SyncZonesFromBackendUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AssignZonesState())
@@ -25,22 +25,22 @@ class AssignZonesViewModel @Inject constructor(
 
     private var initialZoneIds: Set<String> = emptySet()
 
-    fun loadData(workerId: String) {
+    // ✅ CAMBIO: Ahora acepta Int en lugar de String
+    fun loadData(workerId: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             try {
-                // 👇 NUEVO: Sincronizar desde backend primero
+                // Sincronizar desde backend primero
                 val syncResult = syncZonesFromBackendUseCase()
 
                 if (syncResult.isFailure) {
-                    // Si falla la sincronización, aún intentamos cargar datos locales
-                    android.util.Log.w("AssignZonesVM", "⚠️ No se pudo sincronizar, usando datos locales")
+                    android.util.Log.w("AssignZonesVM", "No se pudo sincronizar, usando datos locales")
                 }
 
                 // Obtener listas de manera secuencial
-                val allZones = GetZonesUseCase().first()
-                val assignedZones = GetWorkerAssignedZonesUseCase(workerId).first()
+                val allZones = getZonesUseCase().first()
+                val assignedZones = getWorkerAssignedZonesUseCase(workerId).first()
 
                 val assignedIds = assignedZones.map { it.id }.toSet()
                 initialZoneIds = assignedIds
@@ -80,13 +80,13 @@ class AssignZonesViewModel @Inject constructor(
         }
     }
 
-    fun saveAssignments(workerId: String) {
+    fun saveAssignments(workerId: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, error = null) }
 
-            val zoneIds = _uiState.value.selectedZoneIds.toList()
+            val zoneIdsStr = _uiState.value.selectedZoneIds.toList()
 
-            if (zoneIds.isEmpty()) {
+            if (zoneIdsStr.isEmpty()) {
                 _uiState.update {
                     it.copy(
                         isSaving = false,
@@ -96,7 +96,19 @@ class AssignZonesViewModel @Inject constructor(
                 return@launch
             }
 
-            assignZonesToWorkerUseCase(workerId, zoneIds).fold(
+            val zoneIdsInt = zoneIdsStr.mapNotNull { it.toIntOrNull() }
+
+            if (zoneIdsInt.size != zoneIdsStr.size) {
+                _uiState.update {
+                    it.copy(
+                        isSaving = false,
+                        error = "Algunos IDs de zona son inválidos"
+                    )
+                }
+                return@launch
+            }
+
+            assignZonesToWorkerUseCase(workerId, zoneIdsInt).fold(
                 onSuccess = {
                     _uiState.update {
                         it.copy(
@@ -116,6 +128,14 @@ class AssignZonesViewModel @Inject constructor(
                 }
             )
         }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
+    }
+
+    fun resetSaveSuccess() {
+        _uiState.update { it.copy(saveSuccess = false) }
     }
 }
 

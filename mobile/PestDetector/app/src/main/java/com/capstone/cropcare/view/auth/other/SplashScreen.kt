@@ -46,9 +46,6 @@ fun SplashScreen(
 
     // Detectar cuando la animación de Lottie termina Y el auth check está completo
     LaunchedEffect(progress, uiState) {
-        // Esperar a que:
-        // 1. La animación termine (progress == 1f)
-        // 2. El estado de auth no sea Loading
         if (progress == 1f && uiState !is SplashState.Loading) {
             // Determina a dónde navegar según el estado de auth
             navigationDestination = when (val state = uiState) {
@@ -67,7 +64,6 @@ fun SplashScreen(
         }
     }
 
-    // Detectar cuando el fadeOut termina → navegar
     LaunchedEffect(visible) {
         if (!visible && navigationDestination != null) {
             delay(300) // Debe coincidir con el tiempo de fadeOut
@@ -87,7 +83,6 @@ fun SplashScreen(
         }
     }
 
-    // Fondo persistente
     Box(
         modifier = Modifier
             .fillMaxSize()

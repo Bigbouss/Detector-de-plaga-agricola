@@ -25,7 +25,7 @@
     <string name="home_worker_guide_card_title">Fácil de usar</string>
     <string name="home_worker_guide_first_step">Fotografía el cultivo y espera resultados</string>
     <string name="home_worker_guide_second_step">Si está afectado, completa el reporte</string>
-    <string name="home_worker_guide_third_step">Recibe consejos de tratamiento</string>
+    <string name="home_worker_guide_third_step">Los reportes llegarán al admin</string>
     <string name="home_worker_camara_button">Tomar foto</string>
 
     <!-- HOME HISTORY SCREEN -->
@@ -89,5 +89,26 @@
     <!-- ADMIN SCREENS -->
     <!-- HOME SCREEN -->
     <string name="admin_home_screen_card_title">Trabajadores</string>
+
+    <!-- ZONE MANAGEMENT  -->
+    <string name="gestion_de_zonas">Gestión de Zonas</string>
+    <string name="cultivos">cultivo(s)</string>
+    <string name="agregar_cultivo">Agregar cultivo</string>
+    <string name="crear_primera_zona">Crea tu primera zona de cultivo para comenzar</string>
+    <string name="crear_nueva_zona">Crea una nueva zona para organizar tus cultivos</string>
+    <string name="nombre_de_la_zona">Nombre de la zona *</string>
+    <string name="descripcion_opcional">Descripción (opcional)</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="papa">🥔 Papa</string>
+    <string name="maiz">🌽 Maíz</string>
+
+
+
+
+
+
+
+
+
 
 </resources>

@@ -1,7 +1,7 @@
 package com.capstone.cropcare.domain.model
 
 data class WorkerModel(
-    val id: String,
+    val id: Int,
     val name: String,
     val email: String,
     val phoneNumber: String? = null,

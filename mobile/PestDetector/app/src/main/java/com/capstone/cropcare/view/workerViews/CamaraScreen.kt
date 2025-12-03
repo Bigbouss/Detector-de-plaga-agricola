@@ -42,6 +42,7 @@ import com.capstone.cropcare.view.workerViews.analysisResult.AnalysisViewModel
 @Composable
 fun CameraScreen(
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     onPhotoTaken: (Bitmap) -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -49,10 +50,6 @@ fun CameraScreen(
     val lifecycle = LocalLifecycleOwner.current
 
     val analysisViewModel: AnalysisViewModel = hiltViewModel()
-    // 🔥 INICIALIZA EL MODELO AQUÍ
-//    LaunchedEffect(Unit) {
-//        analysisViewModel.initClassifier("corn")   // Cambia por el modelo que quieras probar
-//    }
 
     //Limpiar la cámara cuando el Composable se destruya
     DisposableEffect(cameraController) {
@@ -69,18 +66,25 @@ fun CameraScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    val executor = ContextCompat.getMainExecutor(context)
-                    takePicture(cameraController, executor, onPhotoTaken)
+                    if (enabled) {
+                        val executor = ContextCompat.getMainExecutor(context)
+                        takePicture(cameraController, executor, onPhotoTaken)
+                    }
                 },
                 shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = if (enabled)
+                    MaterialTheme.colorScheme.primary
+                else
+                    Color.Gray.copy(alpha = 0.6f),
                 modifier = Modifier.size(72.dp)
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_camera),
-                    contentDescription = "Take picture"
+                    contentDescription = "Take picture",
+                    tint = if (enabled) Color.White else Color.LightGray
                 )
             }
+
         },
         floatingActionButtonPosition = FabPosition.Center,
     ) { paddingValues ->

@@ -26,7 +26,7 @@
     <string name="home_worker_guide_card_title">Easy to Use</string>
     <string name="home_worker_guide_first_step">Take a photo of the crop and wait for results</string>
     <string name="home_worker_guide_second_step">If affected, complete the report</string>
-    <string name="home_worker_guide_third_step">Get treatment advice</string>
+    <string name="home_worker_guide_third_step">The reports will be received by the administrator</string>
     <string name="home_worker_camara_button">Take a photo</string>
 
     <!-- HOME BOTTOM BAR VIEWS -->
@@ -94,6 +94,31 @@
     <!-- ADMIN SCREENS -->
     <!-- HOME SCREEN -->
     <string name="admin_home_screen_card_title">Workers</string>
+
+    <!-- ZONE MANAGEMENT  -->
+    <string name="gestion_de_zonas">Zone Management</string>
+    <string name="cultivos">crop(s)</string>
+    <string name="agregar_cultivo">Add crop</string>
+    <string name="crear_primera_zona">Create your first crop zone to get started</string>
+    <string name="crear_nueva_zona">Create a new zone to organize your crops</string>
+    <string name="nombre_de_la_zona">Zone name *</string>
+    <string name="descripcion_opcional">Description (optional)</string>
+    <string name="cancelar">Cancel</string>
+    <string name="papa">🥔 Potato</string>
+    <string name="maiz">🌽 Corn</string>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

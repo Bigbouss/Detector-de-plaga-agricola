@@ -27,12 +27,13 @@ fun WorkerResponse.toDomain(): WorkerModel {
     }
 
     return WorkerModel(
-        id = user.id.toString(),
+        id = user.id,
         name = fullName,
         email = user.email,
-        phoneNumber = null, // El backend no devuelve phone en esta respuesta
+        phoneNumber = null,
         canManagePlots = profile.canManagePlots,
         isActive = profile.isActive,
-        joinedAt = joinedAtMillis
+        joinedAt = joinedAtMillis,
+        assignedZoneIds = emptyList()
     )
 }

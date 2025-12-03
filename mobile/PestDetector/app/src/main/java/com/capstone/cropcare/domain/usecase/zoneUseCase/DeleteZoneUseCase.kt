@@ -8,7 +8,6 @@ class DeleteZoneUseCase @Inject constructor(
     private val repository: CropZoneRepository
 ) {
     suspend operator fun invoke(zone: ZoneModel): Result<Unit> {
-        // ✅ Llamar al backend para eliminar
         return repository.deleteZoneFromBackend(zone.id)
     }
 }

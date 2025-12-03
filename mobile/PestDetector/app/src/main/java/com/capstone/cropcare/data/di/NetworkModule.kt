@@ -3,8 +3,13 @@ package com.capstone.cropcare.data.di
 import com.capstone.cropcare.data.local.preferences.TokenManager
 import com.capstone.cropcare.data.remote.api.AuthApiService
 import com.capstone.cropcare.data.remote.api.InvitationApiService
+import com.capstone.cropcare.data.remote.api.ReportApiService
+import com.capstone.cropcare.data.remote.api.ScannerApiService  // ✅ NUEVO
 import com.capstone.cropcare.data.remote.api.WorkersApiService
 import com.capstone.cropcare.data.remote.api.ZonesApiService
+import com.capstone.cropcare.data.remote.interceptors.AuthInterceptor
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,76 +19,101 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
-import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    const val BASE_URL = "http://192.168.2.114:8000/api/"
-    //const val BASE_URL = "http://10.155.76.196:8000/api/"
+    //<-- url backend local -->
+    //private const val BASE_URL = "http://192.168.2.114:8000/"
+    //<-- url backend en AWS -->
+    private const val BASE_URL = "http://52.70.81.198:8000/"
 
-    @Provides @Singleton
-    fun provideLoggingInterceptor(): HttpLoggingInterceptor =
-        HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
+    @Provides
+    @Singleton
+    fun provideGson(): Gson {
+        return GsonBuilder()
+            .setLenient()
+            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+            .create()
+    }
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
+    fun provideLoggingInterceptor(): HttpLoggingInterceptor {
+        return HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthInterceptor(tokenManager: TokenManager): AuthInterceptor {
+        return AuthInterceptor(tokenManager)
+    }
+
+    @Provides
+    @Singleton
     fun provideOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor,
-        tokenManager: TokenManager
+        authInterceptor: AuthInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .addInterceptor { chain ->
-                val request = chain.request()
-                val token = tokenManager.getAccessToken()
-                val newRequest = if (token != null &&
-                    !request.url.encodedPath.contains("/auth/token") &&
-                    !request.url.encodedPath.contains("/auth/register")) {
-                    request.newBuilder()
-                        .header("Authorization", "Bearer $token")
-                        .build()
-                } else request
-                chain.proceed(newRequest)
-            }
+            .addInterceptor(authInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
 
-    // Retrofit compartido (ambos servicios usan el mismo)
-    @Provides @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    @Provides
+    @Singleton
+    fun provideRetrofit(
+        okHttpClient: OkHttpClient,
+        gson: Gson
+    ): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
-    // AuthApiService
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
     }
 
-    // InvitationApiService
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideInvitationApiService(retrofit: Retrofit): InvitationApiService {
         return retrofit.create(InvitationApiService::class.java)
     }
 
-    // WorkersApiService
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideWorkersApiService(retrofit: Retrofit): WorkersApiService {
         return retrofit.create(WorkersApiService::class.java)
     }
 
-    // ZonesApiService
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideZonesApiService(retrofit: Retrofit): ZonesApiService {
         return retrofit.create(ZonesApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideScannerApiService(retrofit: Retrofit): ScannerApiService {
+        return retrofit.create(ScannerApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReportApiService(retrofit: Retrofit): ReportApiService {
+        return retrofit.create(ReportApiService::class.java)
     }
 }

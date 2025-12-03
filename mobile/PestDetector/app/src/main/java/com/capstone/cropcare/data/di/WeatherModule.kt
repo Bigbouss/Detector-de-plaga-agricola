@@ -21,7 +21,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object WeatherModule {
-
+    //url de api openWeather
     private const val BASE_URL = "https://api.openweathermap.org/data/2.5/"
 
     @Provides @Singleton

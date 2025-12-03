@@ -35,7 +35,7 @@ fun CropTopAppBar(
     modifier: Modifier = Modifier,
     navigationIcon: @Composable () -> Unit = {},
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
-    onAvatarClick: () -> Unit = {} // 👈 nuevo parámetro
+    onAvatarClick: () -> Unit = {}
 ) {
     TopAppBar(
         title = { CropTextTopBar(text = stringResource(R.string.app_name)) },

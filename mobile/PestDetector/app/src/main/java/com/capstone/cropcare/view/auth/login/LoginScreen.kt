@@ -27,8 +27,8 @@ fun LoginScreen(
     loginViewModel: LoginViewModel = hiltViewModel(),
     navigateToRegisterAdmin: () -> Unit,
     navigateToRegisterWorker: () -> Unit,
-    navigateToAdminHome: () -> Unit, // 👈 Nuevo
-    navigateToWorkerHome: () -> Unit // 👈 Nuevo
+    navigateToAdminHome: () -> Unit,
+    navigateToWorkerHome: () -> Unit
 ) {
     val uiState by loginViewModel.uiState.collectAsStateWithLifecycle()
 

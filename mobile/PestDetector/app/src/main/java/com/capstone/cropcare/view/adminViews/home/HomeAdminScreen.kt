@@ -28,7 +28,7 @@ import com.capstone.cropcare.view.core.components.CropCardItemListWorker
 @Composable
 fun HomeAdminScreen(
     goInvitationCode: () -> Unit,
-    goAssignZones: (workerId: String, workerName: String) -> Unit, // 👈 Nuevo parámetro
+    goAssignZones: (workerId: Int, workerName: String) -> Unit, // ✅ Int, no String
     viewModel: HomeAdminViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -42,10 +42,7 @@ fun HomeAdminScreen(
                 viewModel.hideOptionsMenu()
                 viewModel.showDeleteDialog(uiState.selectedWorker!!)
             },
-//            onManagePermissions = {
-//                // TODO: Implementar gestión de permisos
-//                viewModel.hideOptionsMenu()
-//            },
+
             onAssignZones = {
                 val worker = uiState.selectedWorker!!
                 viewModel.hideOptionsMenu()
@@ -160,7 +157,6 @@ fun WorkerOptionsDialog(
     worker: WorkerModel,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
-    //onManagePermissions: () -> Unit,
     onAssignZones: () -> Unit
 ) {
     AlertDialog(
@@ -183,41 +179,6 @@ fun WorkerOptionsDialog(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-//                // Opción: Gestionar permisos
-//                Surface(
-//                    onClick = onManagePermissions,
-//                    modifier = Modifier.fillMaxWidth(),
-//                    shape = MaterialTheme.shapes.medium
-//                ) {
-//                    Row(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .padding(16.dp),
-//                        verticalAlignment = Alignment.CenterVertically
-//                    ) {
-//                        Icon(
-//                            imageVector = Icons.Default.Settings,
-//                            contentDescription = null,
-//                            tint = MaterialTheme.colorScheme.primary
-//                        )
-//                        Spacer(Modifier.width(16.dp))
-//                        Column(modifier = Modifier.weight(1f)) {
-//                            Text(
-//                                text = "Gestionar permisos",
-//                                style = MaterialTheme.typography.bodyLarge,
-//                                fontWeight = FontWeight.SemiBold
-//                            )
-//                            Text(
-//                                text = if (worker.canManagePlots)
-//                                    "Puede gestionar parcelas"
-//                                else
-//                                    "Sin permisos especiales",
-//                                style = MaterialTheme.typography.bodySmall,
-//                                color = MaterialTheme.colorScheme.onSurfaceVariant
-//                            )
-//                        }
-//                    }
-//                }
 
                 Spacer(Modifier.height(8.dp))
 

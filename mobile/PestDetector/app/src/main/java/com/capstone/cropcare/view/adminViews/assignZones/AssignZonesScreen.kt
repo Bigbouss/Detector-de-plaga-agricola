@@ -1,6 +1,5 @@
 package com.capstone.cropcare.view.adminViews.assignZones
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,7 +20,7 @@ import com.capstone.cropcare.domain.model.ZoneModel
 @Composable
 fun AssignZonesScreen(
     workerName: String,
-    workerId: String,
+    workerId: Int,  // ✅ CAMBIO: String → Int
     navigateBack: () -> Unit,
     viewModel: AssignZonesViewModel = hiltViewModel()
 ) {
@@ -80,7 +79,7 @@ fun AssignZonesScreen(
                         Text("Cancelar")
                     }
                     Button(
-                        onClick = { viewModel.saveAssignments(workerId) },
+                        onClick = { viewModel.saveAssignments(workerId) },  // ✅ Ya es Int
                         modifier = Modifier.weight(1f),
                         enabled = !uiState.isSaving && uiState.hasChanges
                     ) {

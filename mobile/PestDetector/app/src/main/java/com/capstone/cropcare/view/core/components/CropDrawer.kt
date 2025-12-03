@@ -73,21 +73,6 @@ fun CropDrawer(
             Spacer(modifier = Modifier.height(4.dp))
         }
         Spacer(modifier = Modifier.weight(1f))
-//        DrawerItem.entries.toTypedArray().takeLast(1).forEach { navigationItem ->
-//            DrawerNavigationItem(
-//                navigationItem = navigationItem,
-//                selected = false,
-//                onClick = {
-//                    when (navigationItem) {
-//                        DrawerItem.Profile -> {
-//                            onNavigationItemClick(DrawerItem.Profile)
-//                        }
-//
-//                        else -> {}
-//                    }
-//                }
-//            )
-//        }
         Spacer(modifier = Modifier.height(24.dp))
     }
 }

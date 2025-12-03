@@ -10,7 +10,7 @@ import com.capstone.cropcare.view.auth.other.SplashScreen
 import com.capstone.cropcare.view.auth.login.LoginScreen
 import com.capstone.cropcare.view.auth.register.admin.RegisterAdminScreen
 import com.capstone.cropcare.view.auth.register.worker.RegisterWorkerScreen
-//import com.capstone.cropcare.view.workerViews.scanConfig.ScanConfigScreen
+
 
 @Composable
 fun NavigationWrapper(modifier: Modifier = Modifier) {
@@ -19,7 +19,6 @@ fun NavigationWrapper(modifier: Modifier = Modifier) {
     NavHost(
         navController = navController,
         startDestination = Splash
-        //startDestination = ScanConfig
     ) {
         // ========== SPLASH SCREEN ==========
 
@@ -98,7 +97,7 @@ fun NavigationWrapper(modifier: Modifier = Modifier) {
             FlowWorkerNavigation(
                 onLogoutSuccess = {
                     navController.navigate(Login) {
-                        popUpTo(0) { inclusive = true } // Limpiar todo el stack
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )
@@ -109,7 +108,7 @@ fun NavigationWrapper(modifier: Modifier = Modifier) {
             FlowAdminNavigation(
                 onLogoutSuccess = {
                     navController.navigate(Login) {
-                        popUpTo(0) { inclusive = true } // Limpiar todo el stack
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )

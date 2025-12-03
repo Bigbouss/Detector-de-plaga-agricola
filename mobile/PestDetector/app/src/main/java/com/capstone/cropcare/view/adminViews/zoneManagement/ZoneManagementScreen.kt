@@ -21,11 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.capstone.cropcare.R
 import com.capstone.cropcare.domain.model.CropModel
 import com.capstone.cropcare.domain.model.ZoneModel
 
@@ -100,12 +102,8 @@ fun ZoneManagementScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gestión de Zonas") },
-                actions = {
-                    IconButton(onClick = navigateToInvitations) {
-                        Icon(Icons.Default.Email, "Invitaciones")
-                    }
-                }
+                title = { Text(stringResource(R.string.gestion_de_zonas)) },
+                actions = {}
             )
         },
         floatingActionButton = {
@@ -225,8 +223,9 @@ fun ExpandableZoneCard(
                         }
 
                         // Contador de cultivos
+                        val cropLabel = stringResource(R.string.cultivos)
                         Text(
-                            text = "${crops.size} cultivo(s)",
+                            text = "${crops.size} $cropLabel",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -247,7 +246,7 @@ fun ExpandableZoneCard(
                         onDismissRequest = onHideMenu
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Agregar cultivo") },
+                            text = { Text(stringResource(R.string.agregar_cultivo)) },
                             onClick = onAddCrop,
                             leadingIcon = {
                                 Icon(
@@ -334,12 +333,7 @@ fun CropItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.weight(1f)
         ) {
-            Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = null,
-                tint = Color(0xFF4CAF50),
-                modifier = Modifier.size(20.dp)
-            )
+
             Spacer(Modifier.width(12.dp))
             Text(
                 text = crop.name,
@@ -386,7 +380,7 @@ fun EmptyZonesState(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Crea tu primera zona de cultivo para comenzar",
+                text = stringResource(R.string.crear_primera_zona),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -438,7 +432,7 @@ fun CreateZoneDialog(
                 OutlinedTextField(
                     value = zoneName,
                     onValueChange = onZoneNameChanged,
-                    label = { Text("Nombre de la zona *") },
+                    label = { Text(stringResource(R.string.nombre_de_la_zona)) },
                     placeholder = { Text("Ej: Zona A, Sector Norte") },
                     enabled = !isCreating,
                     singleLine = true,
@@ -459,7 +453,7 @@ fun CreateZoneDialog(
                 OutlinedTextField(
                     value = zoneDescription,
                     onValueChange = onZoneDescriptionChanged,
-                    label = { Text("Descripción (opcional)") },
+                    label = { Text(stringResource(R.string.descripcion_opcional)) },
                     placeholder = { Text("Ej: Área cercana al riego principal") },
                     enabled = !isCreating,
                     maxLines = 3,
@@ -489,7 +483,7 @@ fun CreateZoneDialog(
                 onClick = onDismiss,
                 enabled = !isCreating
             ) {
-                Text("Cancelar")
+                Text(stringResource(R.string.cancelar))
             }
         }
     )
@@ -507,16 +501,10 @@ fun AddCropDialog(
     AlertDialog(
         onDismissRequest = { if (!isAdding) onDismiss() },
         title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = null,
-                    tint = Color(0xFF4CAF50)
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+
                 Spacer(Modifier.width(8.dp))
-                Text("Agregar Cultivo")
+                Text(stringResource(R.string.agregar_cultivo))
             }
         },
         text = {
@@ -529,82 +517,59 @@ fun AddCropDialog(
 
                 Spacer(Modifier.height(16.dp))
 
-                OutlinedTextField(
-                    value = cropName,
-                    onValueChange = onCropNameChanged,
-                    label = { Text("Nombre del cultivo *") },
-                    placeholder = { Text("Ej: Papas, Tomates, Maíz") },
-                    enabled = !isAdding,
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    isError = cropName.isNotBlank() && cropName.length < 3,
-                    supportingText = {
-                        if (cropName.isNotBlank() && cropName.length < 3) {
-                            Text(
-                                text = "Mínimo 3 caracteres",
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            tint = Color(0xFF4CAF50)
-                        )
-                    }
+                Text(
+                    text = "Selecciona el tipo de cultivo:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold
                 )
 
                 Spacer(Modifier.height(12.dp))
 
-                // Sugerencias rápidas
-                Text(
-                    text = "Sugerencias:",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.height(8.dp))
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    FilterChip(
+                        selected = cropName == "Corn",
+                        onClick = { onCropNameChanged("Corn") },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.maiz),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        },
+                        enabled = !isAdding,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    FilterChip(
+                        selected = cropName == "Potato",
+                        onClick = { onCropNameChanged("Potato") },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.papa),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        },
+                        enabled = !isAdding,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                if (cropName.isNotEmpty()) {
+                    Spacer(Modifier.height(12.dp))
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        SuggestionChip(
-                            onClick = { onCropNameChanged("Papas") },
-                            label = { Text("Papas", style = MaterialTheme.typography.labelSmall) },
-                            enabled = !isAdding
-                        )
-                        SuggestionChip(
-                            onClick = { onCropNameChanged("Tomates") },
-                            label = { Text("Tomates", style = MaterialTheme.typography.labelSmall) },
-                            enabled = !isAdding
-                        )
-                        SuggestionChip(
-                            onClick = { onCropNameChanged("Maíz") },
-                            label = { Text("Maíz", style = MaterialTheme.typography.labelSmall) },
-                            enabled = !isAdding
-                        )
-                    }
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        SuggestionChip(
-                            onClick = { onCropNameChanged("Trigo") },
-                            label = { Text("Trigo", style = MaterialTheme.typography.labelSmall) },
-                            enabled = !isAdding
-                        )
-                        SuggestionChip(
-                            onClick = { onCropNameChanged("Lechugas") },
-                            label = { Text("Lechugas", style = MaterialTheme.typography.labelSmall) },
-                            enabled = !isAdding
-                        )
-                        SuggestionChip(
-                            onClick = { onCropNameChanged("Sandías") },
-                            label = { Text("Sandías", style = MaterialTheme.typography.labelSmall) },
-                            enabled = !isAdding
+                        Text(
+                            text = "✓ Seleccionado: $cropName",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(12.dp)
                         )
                     }
                 }
@@ -613,7 +578,7 @@ fun AddCropDialog(
         confirmButton = {
             Button(
                 onClick = onConfirm,
-                enabled = cropName.length >= 3 && !isAdding
+                enabled = cropName.isNotEmpty() && !isAdding
             ) {
                 if (isAdding) {
                     CircularProgressIndicator(

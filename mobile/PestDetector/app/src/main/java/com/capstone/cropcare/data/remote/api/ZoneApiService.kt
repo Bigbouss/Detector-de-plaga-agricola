@@ -13,30 +13,26 @@ import retrofit2.http.Path
 
 interface ZonesApiService {
 
-    // Listar zonas de la empresa del admin
-    @GET("zonas/")
+    // ✅ CORRECCIÓN: Agregar prefijo /api/zonecrop/
+    @GET("api/zonecrop/zonas/")
     suspend fun getZones(): Response<List<ZoneResponse>>
 
-    // Crear nueva zona
-    @POST("zonas/")
+    @POST("api/zonecrop/zonas/")
     suspend fun createZone(
         @Body request: CreateZoneRequest
     ): Response<ZoneResponse>
 
-    // Eliminar zona
-    @DELETE("zonas/{id}/")
+    @DELETE("api/zonecrop/zonas/{id}/")
     suspend fun deleteZone(
         @Path("id") zoneId: Int
     ): Response<Unit>
 
-    // Crear cultivo
-    @POST("cultivos/")
+    @POST("api/zonecrop/cultivos/")
     suspend fun createCrop(
         @Body request: CreateCropRequest
     ): Response<CropDto>
 
-    // Eliminar cultivo
-    @DELETE("cultivos/{id}/")
+    @DELETE("api/zonecrop/cultivos/{id}/")
     suspend fun deleteCrop(
         @Path("id") cropId: Int
     ): Response<Unit>

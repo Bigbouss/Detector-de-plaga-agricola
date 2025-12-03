@@ -107,23 +107,6 @@ fun HomeWorkerScreen(
         }
     }
 
-
-//    Scaffold(
-//        topBar = { CropTopAppBar() },
-//        bottomBar = {
-//            CropBottomBar(
-//                itemList = listOf(
-//                    NavItems(stringResource(R.string.home_bottom_bar_home), R.drawable.ic_home
-//                       // , onClick = {}
-//                    ),
-//                    NavItems(stringResource(R.string.home_bottom_bar_history), R.drawable.ic_history,
-//                      //  onClick = { navigateToHistory() }
-//                    )
-//                ), selectedIndex = 0, onItemSelected = {}
-//            )
-//        })
-//
-//    { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -354,14 +337,6 @@ fun HomeWorkerScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Spacer(Modifier.height(10.dp))
-//                    CropButtonPrimary(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .padding(vertical = 3.dp)
-//                            .padding(horizontal = 15.dp),
-//                        text = "aaaa",
-//                        onClick = {navigateToActivity()}
-//                    )
                     Icon(
                         painter = painterResource(R.drawable.ic_image_home),
                         contentDescription = "",
@@ -371,7 +346,7 @@ fun HomeWorkerScreen(
             }
         }
     }
-//}
+
 
 
 

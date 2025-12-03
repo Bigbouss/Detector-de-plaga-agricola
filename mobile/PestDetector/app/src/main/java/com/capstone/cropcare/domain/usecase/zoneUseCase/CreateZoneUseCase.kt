@@ -17,7 +17,6 @@ class CreateZoneUseCase @Inject constructor(
             return Result.failure(Exception("El nombre debe tener al menos 3 caracteres"))
         }
 
-        // ✅ CAMBIO: Llamar al backend en lugar de crear zona local
         return cropZoneRepository.createZone(
             name = name.trim(),
             description = description?.trim()

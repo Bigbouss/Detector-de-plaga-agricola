@@ -28,7 +28,7 @@ class ZoneManagementViewModel @Inject constructor(
     private val getCropsByZoneUseCase: GetCropsByZoneUseCase,
     private val addCropToZoneUseCase: AddCropToZoneUseCase,
     private val deleteCropUseCase: DeleteCropUseCase,
-    private val syncZonesFromBackendUseCase: SyncZonesFromBackendUseCase // 👈 NUEVO
+    private val syncZonesFromBackendUseCase: SyncZonesFromBackendUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ZoneManagementState())
@@ -37,25 +37,23 @@ class ZoneManagementViewModel @Inject constructor(
     private val cropsCache = mutableMapOf<String, List<CropModel>>()
 
     init {
-        // 👇 NUEVO: Sincronizar desde backend antes de cargar
         syncZonesFromBackend()
         loadZones()
     }
 
-    // 👇 NUEVO: Sincronización desde backend
     private fun syncZonesFromBackend() {
         viewModelScope.launch {
             _uiState.update { it.copy(isSyncing = true) }
 
-            Log.d("ZoneManagementVM", "🔄 Sincronizando zonas desde backend...")
+            Log.d("ZoneManagementVM", "Sincronizando zonas desde backend...")
 
             syncZonesFromBackendUseCase().fold(
                 onSuccess = {
-                    Log.d("ZoneManagementVM", "✅ Zonas sincronizadas correctamente")
+                    Log.d("ZoneManagementVM", "Zonas sincronizadas correctamente")
                     _uiState.update { it.copy(isSyncing = false) }
                 },
                 onFailure = { error ->
-                    Log.w("ZoneManagementVM", "⚠️ Error sincronizando, usando cache local: ${error.message}")
+                    Log.w("ZoneManagementVM", "⚠Error sincronizando, usando cache local: ${error.message}")
                     _uiState.update {
                         it.copy(
                             isSyncing = false,
@@ -67,7 +65,7 @@ class ZoneManagementViewModel @Inject constructor(
         }
     }
 
-    // 👇 NUEVO: Método público para refresh manual (opcional)
+
     fun refreshZones() {
         syncZonesFromBackend()
     }
@@ -389,7 +387,7 @@ data class ZoneManagementState(
 
     // Loading states
     val isLoading: Boolean = false,
-    val isSyncing: Boolean = false, // 👈 NUEVO
+    val isSyncing: Boolean = false,
     val isCreatingZone: Boolean = false,
     val isDeletingZone: Boolean = false,
     val isAddingCrop: Boolean = false,
@@ -413,5 +411,5 @@ data class ZoneManagementState(
     val cropToDelete: CropModel? = null,
 
     val error: String? = null,
-    val syncError: String? = null // 👈 NUEVO: para errores de sincronización
+    val syncError: String? = null 
 )

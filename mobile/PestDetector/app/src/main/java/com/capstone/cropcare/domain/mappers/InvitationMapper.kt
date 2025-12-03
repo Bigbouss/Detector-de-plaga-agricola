@@ -6,8 +6,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 
-fun JoinCodeResponse.toDomain(organizationName: String = ""): InvitationModel {
-    // ... código existente de parsing de fechas ...
+fun JoinCodeResponse.toDomain(empresaId: Int): InvitationModel {
 
     val dateFormats = listOf(
         SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.US),
@@ -24,24 +23,28 @@ fun JoinCodeResponse.toDomain(organizationName: String = ""): InvitationModel {
                 continue
             }
         }
-        android.util.Log.e("InvitationMapper", "❌ No se pudo parsear fecha: $dateString")
+        android.util.Log.e("InvitationMapper", "No se pudo parsear fecha: $dateString")
         return null
     }
 
+    // Parsear fechas
     val createdAtMillis = parseDate(createdAt) ?: System.currentTimeMillis()
-    val expiresAtMillis = expiresAt?.let { parseDate(it) } ?: (createdAtMillis + 7 * 24 * 60 * 60 * 1000L)
+    val expiresAtMillis = expiresAt?.let { parseDate(it) }
+        ?: (createdAtMillis + 7 * 24 * 60 * 60 * 1000L)
 
+    // Determinar estado del código
     val isUsed = usedCount >= maxUses
     val isExpired = expiresAtMillis < System.currentTimeMillis()
+    val isActive = !isUsed && !isExpired && !revoked
 
     return InvitationModel(
         id = id.toString(),
         code = code,
         organizationId = empresa.toString(),
-        organizationName = organizationName,
+        organizationName = "Empresa #$empresa",
         createdBy = "",
-        usedBy = usedByEmail,  // ← CAMBIO: usar usedByEmail del DTO
-        isActive = !isUsed && !isExpired && !revoked,
+        usedBy = usedByEmail,
+        isActive = isActive,
         isUsed = isUsed,
         expiresAt = expiresAtMillis,
         createdAt = createdAtMillis

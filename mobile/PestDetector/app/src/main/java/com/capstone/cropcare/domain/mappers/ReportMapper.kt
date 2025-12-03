@@ -3,55 +3,67 @@ package com.capstone.cropcare.domain.mappers
 import com.capstone.cropcare.data.local.entity.ReportEntity
 import com.capstone.cropcare.data.local.entity.relations.ReportWithDetails
 import com.capstone.cropcare.domain.model.ReportModel
+import com.capstone.cropcare.domain.model.CropModel
+import com.capstone.cropcare.domain.model.ZoneModel
 
-// Mapper para ReportEntity (sin detalles)
+// Mapper para ReportEntity
 fun ReportEntity.toDomain() = ReportModel(
     id = reportId,
     workerName = workerName,
+    workerId = workerId,
     diagnostic = diagnostic,
-    zone = com.capstone.cropcare.domain.model.ZoneModel(
+    confidence = null,
+    zone = ZoneModel(
         id = zoneId,
-        name = "", // No tenemos el nombre aquí
+        name = "",
         description = null
     ),
-    crop = com.capstone.cropcare.domain.model.CropModel(
+    crop = CropModel(
         id = cropId,
-        name = "", // No tenemos el nombre aquí
+        name = "",
         zoneId = zoneId
     ),
     photoPath = localPhotoPath,
     observation = observation,
     timestamp = timestamp,
+    sessionId = sessionId,
+    scanResultId = scanResultId,
     syncedWithBackend = syncedWithBackend
 )
 
-// Mapper para ReportWithDetails (con Zone y Crop completos)
+// Mapper para ReportWithDetails
 fun ReportWithDetails.toDomain(): ReportModel? {
-    // Si no tiene zone o crop, retorna null
     if (zone == null || crop == null) return null
 
     return ReportModel(
         id = report.reportId,
         workerName = report.workerName,
+        workerId = report.workerId,
         diagnostic = report.diagnostic,
+        confidence = null,
         zone = zone.toDomain(),
         crop = crop.toDomain(),
         photoPath = report.localPhotoPath,
         observation = report.observation,
         timestamp = report.timestamp,
+        sessionId = report.sessionId,
+        scanResultId = report.scanResultId,
         syncedWithBackend = report.syncedWithBackend
     )
 }
 
-// Mapper de Domain a Entity
+// Domain → Entity
 fun ReportModel.toEntity() = ReportEntity(
     reportId = id,
     workerName = workerName,
+    workerId = workerId,
     diagnostic = diagnostic,
     zoneId = zone.id,
     cropId = crop.id,
     localPhotoPath = photoPath,
     observation = observation,
     timestamp = timestamp,
-    syncedWithBackend = syncedWithBackend
+    syncedWithBackend = syncedWithBackend,
+    sessionId = sessionId,
+    scanResultId = scanResultId
 )

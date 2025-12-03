@@ -187,191 +187,6 @@ fun InvitationManagementScreen(
     }
 }
 
-//@Composable
-//fun InvitationCard(
-//    invitation: InvitationModel,
-//    showUsedBy: Boolean = false,
-//    onCopyCode: () -> Unit
-//) {
-//    val now = System.currentTimeMillis()
-//    val isExpired = now > invitation.expiresAt
-//    val daysUntilExpiration = ((invitation.expiresAt - now) / (1000 * 60 * 60 * 24)).toInt()
-//
-//    Card(
-//        modifier = Modifier.fillMaxWidth(),
-//        colors = CardDefaults.cardColors(
-//            containerColor = when {
-//                invitation.isUsed -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-//                isExpired -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-//                else -> MaterialTheme.colorScheme.surface
-//            }
-//        ),
-//        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-//    ) {
-//        Column(
-//            modifier = Modifier.padding(16.dp)
-//        ) {
-//            Row(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalArrangement = Arrangement.SpaceBetween,
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                // Código
-//                Text(
-//                    text = invitation.code,
-//                    style = MaterialTheme.typography.headlineMedium,
-//                    fontFamily = FontFamily.Monospace,
-//                    fontWeight = FontWeight.Bold,
-//                    color = when {
-//                        invitation.isUsed -> MaterialTheme.colorScheme.onSurfaceVariant
-//                        isExpired -> MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
-//                        else -> MaterialTheme.colorScheme.primary
-//                    }
-//                )
-//
-//                // Estado
-//                Row(
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    Icon(
-//                        painter = when {
-//                            invitation.isUsed -> painterResource(R.drawable.ic_check)
-//                            isExpired -> painterResource(R.drawable.ic_close)
-//                            else -> painterResource(R.drawable.ic_access_time)
-//                        },
-//                        contentDescription = null,
-//                        tint = when {
-//                            invitation.isUsed -> Color(0xFF4CAF50)
-//                            isExpired -> MaterialTheme.colorScheme.error
-//                            else -> MaterialTheme.colorScheme.primary
-//                        },
-//                        modifier = Modifier.size(20.dp)
-//                    )
-//                    Spacer(Modifier.width(4.dp))
-//                    Text(
-//                        text = when {
-//                            invitation.isUsed -> "Usado"
-//                            isExpired -> "Expirado"
-//                            else -> "Activo"
-//                        },
-//                        style = MaterialTheme.typography.labelMedium,
-//                        color = when {
-//                            invitation.isUsed -> Color(0xFF4CAF50)
-//                            isExpired -> MaterialTheme.colorScheme.error
-//                            else -> MaterialTheme.colorScheme.primary
-//                        },
-//                        fontWeight = FontWeight.Bold
-//                    )
-//                }
-//            }
-//
-//            Spacer(Modifier.height(12.dp))
-//
-//            // Fecha de creación
-//            Row(
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                Icon(
-//                    painter = painterResource(R.drawable.ic_calendar),
-//                    contentDescription = null,
-//                    modifier = Modifier.size(16.dp),
-//                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-//                )
-//                Spacer(Modifier.width(4.dp))
-//                Text(
-//                    text = "Creado: ${invitation.createdAt.toDateString()}",
-//                    style = MaterialTheme.typography.bodySmall,
-//                    color = MaterialTheme.colorScheme.onSurfaceVariant
-//                )
-//            }
-//
-//            Spacer(Modifier.height(4.dp))
-//
-//            // Fecha de expiración
-//            Row(
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                Icon(
-//                    painter = painterResource(R.drawable.ic_schedule,),
-//                    contentDescription = null,
-//                    modifier = Modifier.size(16.dp),
-//                    tint = when {
-//                        isExpired -> MaterialTheme.colorScheme.error
-//                        daysUntilExpiration <= 0 -> Color(0xFFFF9800)
-//                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-//                    }
-//                )
-//                Spacer(Modifier.width(4.dp))
-//                Text(
-//                    text = when {
-//                        isExpired -> "Expiró: ${invitation.expiresAt.toDateString()}"
-//                        daysUntilExpiration == 0 -> "⏰ Expira hoy"
-//                        daysUntilExpiration < 7 -> "Expira en ${daysUntilExpiration + 1} día(s)"
-//                        else -> "Válido hasta: ${invitation.expiresAt.toDateString()}"
-//                    },
-//                    style = MaterialTheme.typography.bodySmall,
-//                    color = when {
-//                        isExpired -> MaterialTheme.colorScheme.error
-//                        daysUntilExpiration <= 1 -> Color(0xFFFF9800)
-//                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-//                    },
-//                    fontWeight = if (daysUntilExpiration <= 1 && !isExpired) FontWeight.Bold else FontWeight.Normal
-//                )
-//            }
-//
-//            // Mostrar quién usó el código (solo en tab "Usados")
-//            if (showUsedBy && invitation.isUsed) {
-//                Spacer(Modifier.height(12.dp))
-//                HorizontalDivider()
-//                Spacer(Modifier.height(12.dp))
-//
-//                Row(
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    Icon(
-//                        painter = painterResource(R.drawable.ic_person),
-//                        contentDescription = null,
-//                        modifier = Modifier.size(20.dp),
-//                        tint = Color(0xFF4CAF50)
-//                    )
-//                    Spacer(Modifier.width(8.dp))
-//                    Column {
-//                        Text(
-//                            text = "Usado por:",
-//                            style = MaterialTheme.typography.labelSmall,
-//                            color = MaterialTheme.colorScheme.onSurfaceVariant
-//                        )
-//                        Spacer(Modifier.height(2.dp))
-//                        Text(
-//                            text = invitation.usedBy ?: "Usuario desconocido",
-//                            style = MaterialTheme.typography.bodyMedium,
-//                            fontWeight = FontWeight.SemiBold,
-//                            color = MaterialTheme.colorScheme.onSurface
-//                        )
-//                    }
-//                }
-//            }
-//
-//            // Botón copiar (solo para códigos activos)
-//            if (!invitation.isUsed && !isExpired) {
-//                Spacer(Modifier.height(12.dp))
-//                OutlinedButton(
-//                    onClick = onCopyCode,
-//                    modifier = Modifier.fillMaxWidth()
-//                ) {
-//                    Icon(
-//                        painter = painterResource(R.drawable.ic_content_copy),
-//                        contentDescription = null,
-//                        modifier = Modifier.size(18.dp)
-//                    )
-//                    Spacer(Modifier.width(8.dp))
-//                    Text("Copiar Código")
-//                }
-//            }
-//        }
-//    }
-//}
-
 @Composable
 fun InvitationCard(
     invitation: InvitationModel,
@@ -381,9 +196,8 @@ fun InvitationCard(
     // Estado para tiempo restante
     var remainingTime by remember { mutableStateOf(invitation.expiresAt - System.currentTimeMillis()) }
 
-    // 🔄 Actualiza cada segundo mientras no haya expirado Y no esté usado
     LaunchedEffect(invitation.expiresAt, invitation.isUsed) {
-        if (!invitation.isUsed) {  // Solo actualizar si no está usado
+        if (!invitation.isUsed) {
             while (remainingTime > 0) {
                 remainingTime = invitation.expiresAt - System.currentTimeMillis()
                 delay(1000)
@@ -391,7 +205,7 @@ fun InvitationCard(
         }
     }
 
-    val isExpired = remainingTime <= 0 || invitation.isUsed  // ← CAMBIO: considerar usado como expirado
+    val isExpired = remainingTime <= 0 || invitation.isUsed
     val hours = (remainingTime / (1000 * 60 * 60)).toInt()
     val minutes = ((remainingTime / (1000 * 60)) % 60).toInt()
     val seconds = ((remainingTime / 1000) % 60).toInt()
@@ -515,8 +329,7 @@ fun InvitationCard(
                 )
             }
 
-            // Mostrar quién usó el código (solo en tab "Usados")
-            if (showUsedBy) {  // ← CAMBIO: remover la condición invitation.isUsed
+            if (showUsedBy) {
                 Spacer(Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(Modifier.height(12.dp))
@@ -582,7 +395,7 @@ fun GeneratedInvitationDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                "✅ Código Generado",
+                "Código Generado",
                 style = MaterialTheme.typography.titleLarge
             )
         },

@@ -1,6 +1,5 @@
 package com.capstone.cropcare.view.auth.register.admin
 
-
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -32,13 +31,28 @@ class RegisterViewModel @Inject constructor(
         validateForm()
     }
 
-    fun onNameChanged(name: String) {
-        _uiState.update { it.copy(name = name) }
+    fun onFirstNameChanged(firstName: String) {
+        _uiState.update { it.copy(firstName = firstName) }
+        validateForm()
+    }
+
+    fun onLastNameChanged(lastName: String) {
+        _uiState.update { it.copy(lastName = lastName) }
         validateForm()
     }
 
     fun onOrganizationNameChanged(organizationName: String) {
         _uiState.update { it.copy(organizationName = organizationName) }
+        validateForm()
+    }
+
+    fun onPhoneChanged(phone: String) {
+        _uiState.update { it.copy(phone = phone) }
+        validateForm()
+    }
+
+    fun onTaxIdChanged(taxId: String) {
+        _uiState.update { it.copy(taxId = taxId) }
         validateForm()
     }
 
@@ -48,15 +62,29 @@ class RegisterViewModel @Inject constructor(
         val isValidEmail = state.email.isNotBlank() &&
                 Patterns.EMAIL_ADDRESS.matcher(state.email).matches()
         val isValidPassword = state.password.length >= 8
-        val isValidName = state.name.isNotBlank()
+        val isValidFirstName = state.firstName.isNotBlank()
+        val isValidLastName = state.lastName.isNotBlank()
         val isValidOrgName = state.organizationName.isNotBlank()
+        val isValidTaxId = state.taxId.isNotBlank() && validateRut(state.taxId)
 
         _uiState.update {
             it.copy(
                 isRegisterEnabled = isValidEmail && isValidPassword &&
-                        isValidName && isValidOrgName
+                        isValidFirstName && isValidLastName &&
+                        isValidOrgName && isValidTaxId
             )
         }
+    }
+
+    private fun validateRut(rut: String): Boolean {
+        if (rut.isBlank()) return false
+
+        val rutPattern = """^\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]$""".toRegex()
+        return rutPattern.matches(rut)
+    }
+
+    private fun cleanRut(rut: String): String {
+        return rut.replace(".", "").trim()
     }
 
     fun registerAdmin() {
@@ -68,8 +96,11 @@ class RegisterViewModel @Inject constructor(
             val result = registerAdminUseCase(
                 email = _uiState.value.email.trim(),
                 password = _uiState.value.password,
-                name = _uiState.value.name.trim(),
-                organizationName = _uiState.value.organizationName.trim()
+                firstName = _uiState.value.firstName.trim(),
+                lastName = _uiState.value.lastName.trim(),
+                companyName = _uiState.value.organizationName.trim(),
+                phone = _uiState.value.phone.trim().takeIf { it.isNotBlank() },
+                taxId = cleanRut(_uiState.value.taxId)
             )
 
             result.fold(
@@ -102,8 +133,11 @@ class RegisterViewModel @Inject constructor(
 data class RegisterState(
     val email: String = "",
     val password: String = "",
-    val name: String = "",
+    val firstName: String = "",
+    val lastName: String = "",
     val organizationName: String = "",
+    val phone: String = "",
+    val taxId: String = "",
     val isRegisterEnabled: Boolean = false,
     val isLoading: Boolean = false,
     val registerSuccess: Boolean = false,

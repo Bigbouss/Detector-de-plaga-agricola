@@ -5,11 +5,6 @@ import com.capstone.cropcare.domain.repository.AuthRepository
 import com.capstone.cropcare.domain.repository.CropZoneRepository
 import javax.inject.Inject
 
-/**
- * Sincroniza zonas desde el backend según el rol del usuario:
- * - ADMIN: Sincroniza todas las zonas de su empresa
- * - WORKER: Sincroniza solo las zonas asignadas a él
- */
 class SyncZonesFromBackendUseCase @Inject constructor(
     private val cropZoneRepository: CropZoneRepository,
     private val authRepository: AuthRepository

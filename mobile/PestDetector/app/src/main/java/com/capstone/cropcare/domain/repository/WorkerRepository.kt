@@ -5,12 +5,12 @@ import com.capstone.cropcare.domain.model.ZoneModel
 import kotlinx.coroutines.flow.Flow
 
 interface WorkersRepository {
-    suspend fun getWorkers(): Flow<List<WorkerModel>>
-    suspend fun deleteWorker(workerId: String): Result<Unit>
-    suspend fun updateWorkerPermissions(workerId: String, canManagePlots: Boolean): Result<Unit>
 
-    // ========== GESTIÓN DE ZONAS ==========
-    suspend fun assignZonesToWorker(workerId: String, zoneIds: List<String>): Result<Unit>
-    fun getWorkerAssignedZones(workerId: String): Flow<List<ZoneModel>>
-    suspend fun getWorkerAssignedZoneIds(workerId: String): List<String>
+    suspend fun getAllWorkers(): Flow<List<WorkerModel>>
+
+    fun getWorkerAssignedZones(workerId: Int): Flow<List<ZoneModel>>
+
+    suspend fun assignZonesToWorker(workerId: Int, zoneIds: List<Int>): Result<Unit>
+
+    suspend fun updateWorkerPermissions(workerId: Int, canManagePlots: Boolean): Result<Unit>
 }

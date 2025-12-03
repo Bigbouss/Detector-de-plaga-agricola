@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.capstone.cropcare.domain.model.WorkerModel
 import com.capstone.cropcare.domain.usecase.workerUseCase.DeleteWorkerUseCase
 import com.capstone.cropcare.domain.usecase.workerUseCase.GetWorkersUseCase
-
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,7 +28,7 @@ class HomeAdminViewModel @Inject constructor(
 
     fun loadWorkers() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, error = null) }
 
             try {
                 getWorkersUseCase().collect { workers ->
@@ -44,7 +43,7 @@ class HomeAdminViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message
+                        error = e.message ?: "Error al cargar trabajadores"
                     )
                 }
             }

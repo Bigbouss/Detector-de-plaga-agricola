@@ -31,7 +31,7 @@ import com.capstone.cropcare.view.adminViews.assignZones.AssignZonesScreen
 import com.capstone.cropcare.view.adminViews.home.HomeAdminScreen
 import com.capstone.cropcare.view.adminViews.home.HomeAdminViewModel
 import com.capstone.cropcare.view.adminViews.invitationManagement.InvitationManagementScreen
-import com.capstone.cropcare.view.adminViews.metricsManagement.MetricsAdminScreen
+import com.capstone.cropcare.view.adminViews.metricsManagement.MetricsManagementScreen
 import com.capstone.cropcare.view.adminViews.reportManagement.ReportManagementScreen
 import com.capstone.cropcare.view.adminViews.zoneManagement.ZoneManagementScreen
 import com.capstone.cropcare.view.core.components.*
@@ -56,7 +56,7 @@ fun FlowAdminNavigation(
     // Observar estado de logout
     val logoutState by authViewModel.logoutState.collectAsStateWithLifecycle()
 
-    // --- 🔹 Configuración de rutas ---
+    // --- Configuración de rutas ---
     val routesWithTopBar = listOf(
         HomeAdmin::class.qualifiedName,
         ZoneManagement::class.qualifiedName,
@@ -69,7 +69,7 @@ fun FlowAdminNavigation(
     val shouldShowTopBar = currentRoute in routesWithTopBar && currentRoute !in fullScreenRoutes
     val shouldShowBottomBar = currentRoute in routesWithBottomBar && currentRoute !in fullScreenRoutes
 
-    // --- 🔹 Items de bottom bar ---
+    // --- Items de bottom bar ---
     val items = remember {
         listOf(
             NavItems(context.getString(R.string.home_bottom_bar_home), R.drawable.ic_home),
@@ -97,7 +97,7 @@ fun FlowAdminNavigation(
         }
     }
 
-    // --- 🔹 Drawer derecho ---
+    // --- Drawer derecho ---
     var drawerState by remember { mutableStateOf(CropDrawerCustomState.Closed) }
     var selectedDrawerItem by remember { mutableStateOf(DrawerItem.Profile) }
 
@@ -117,7 +117,7 @@ fun FlowAdminNavigation(
         label = "AnimatedScale"
     )
 
-    // --- 🔹 Observar estado de logout ---
+    // --- Observar estado de logout ---
     LaunchedEffect(logoutState) {
         when (logoutState) {
             is LogoutState.Success -> {
@@ -132,7 +132,7 @@ fun FlowAdminNavigation(
         }
     }
 
-    // --- 🔹 Estructura visual ---
+    // --- Estructura visual ---
     Box(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.surface)
@@ -140,7 +140,7 @@ fun FlowAdminNavigation(
             .navigationBarsPadding()
             .fillMaxSize()
     ) {
-        // --- 🔹 Botón atrás UNIFICADO (FUERA del Scaffold para mayor prioridad) ---
+        // --- Botón atrás UNIFICADO ---
         BackHandler(enabled = true) {
             when {
                 drawerState.isOpened() -> {
@@ -221,20 +221,20 @@ fun FlowAdminNavigation(
                     HomeAdminScreen(
                         goInvitationCode = { navController.navigate(InvitationManagement) },
                         goAssignZones = { workerId, workerName ->
-                            navController.navigate(AssignZones(workerId, workerName))
+                            navController.navigate(AssignZones(workerId, workerName)) // ✅ workerId ya es Int
                         }
                     )
                 }
                 composable<ZoneManagement> { ZoneManagementScreen() }
                 composable<ReportManagement> { ReportManagementScreen() }
-                composable<MetricsAdmin> { MetricsAdminScreen() }
+                composable<MetricsAdmin> { MetricsManagementScreen() }
                 composable<InvitationManagement> {
                     InvitationManagementScreen(navigateBack = { navController.popBackStack() })
                 }
                 composable<AssignZones> { backStackEntry ->
                     val args = backStackEntry.toRoute<AssignZones>()
 
-                    // 🔹 Obtenemos el ViewModel del HomeAdmin (usando su back stack)
+                    // Obtenemos el ViewModel del HomeAdmin (usando su back stack)
                     val parentEntry = remember(backStackEntry) {
                         navController.getBackStackEntry(HomeAdmin::class.qualifiedName!!)
                     }
@@ -245,7 +245,7 @@ fun FlowAdminNavigation(
                         workerId = args.workerId,
                         navigateBack = {
                             navController.popBackStack()
-                            // 🔹 Recargamos lista de trabajadores al volver
+                            // Recargamos lista de trabajadores al volver
                             homeViewModel.loadWorkers()
                         }
                     )
@@ -254,7 +254,7 @@ fun FlowAdminNavigation(
             }
         }
 
-        // --- 🔹 Overlay oscuro + Drawer (clickable fuera para cerrar) ---
+        // --- Overlay oscuro + Drawer (clickable fuera para cerrar) ---
         if (drawerState.isOpened()) {
             Box(
                 modifier = Modifier
@@ -295,7 +295,7 @@ fun FlowAdminNavigation(
             }
         }
 
-        // --- 🔹 Loading overlay durante logout ---
+        // --- Loading overlay durante logout ---
         if (logoutState is LogoutState.Loading) {
             Box(
                 modifier = Modifier

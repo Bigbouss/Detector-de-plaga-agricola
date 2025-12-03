@@ -1,13 +1,16 @@
 package com.capstone.cropcare
 
 import android.app.Application
+import androidx.work.WorkManager
+import com.capstone.cropcare.data.worker.SyncScanWorker
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class CropCareApp : Application() {
-
+class CropCareApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        // La app ya está lista, ahora usa datos del backend
+
+        val workManager = WorkManager.getInstance(this)
+        SyncScanWorker.schedule(workManager)
     }
 }

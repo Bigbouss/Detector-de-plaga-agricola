@@ -68,52 +68,32 @@ import java.io.File
 fun ReportScreenWorker(
     reportViewModel: ReportViewModel = hiltViewModel(),
     analysisViewModel: AnalysisViewModel,
-    backToHome: () -> Unit
+    backToSession: (String) -> Unit
 ) {
-    val state by reportViewModel.state.collectAsState()
-    val availableZones by reportViewModel.availableZones.collectAsState()
-    val availableCrops by reportViewModel.availableCrops.collectAsState()
-    val isLoading by reportViewModel.isLoading.collectAsState()
-    val errorMessage by reportViewModel.errorMessage.collectAsState()
-
-    val tempBitmap by analysisViewModel.tempBitmap.collectAsState()
-    val savedPath by analysisViewModel.savedImagePath.collectAsState()
-
+    val state = reportViewModel.state.collectAsState().value
+    val isLoading = reportViewModel.isLoading.collectAsState().value
+    val errorMessage = reportViewModel.errorMessage.collectAsState().value
     val focusManager = LocalFocusManager.current
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Mostrar errores en Snackbar
+    // Mostrar errores
     LaunchedEffect(errorMessage) {
-        errorMessage?.let { message ->
-            snackbarHostState.showSnackbar(message)
+        errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
             reportViewModel.clearError()
         }
     }
 
-    // Inicializa datos solo una vez
-    LaunchedEffect(tempBitmap, savedPath) {
-        tempBitmap?.let {
-            if (state.analizedPhoto == null) {
-                reportViewModel.setAnalizedPhoto(it)
-            }
+    // Si no se han cargado datos desde loadFromScan aún -> mostrar loading
+    if (state.selectedZone == null || state.selectedCrop == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
         }
-        savedPath?.let {
-            if (state.localPhotoPath == null) {
-                reportViewModel.setLocalPhotoPath(it)
-            }
-        }
-        val info = analysisViewModel.diseaseInfo.value
-
-        val diagnosticText = when {
-            info == null -> "Sin información"
-            info.isHealthy -> "Planta saludable"
-            else -> info.diseaseName  // 🧠 Nombre real de la enfermedad
-        }
-
-        reportViewModel.setDiagnostic(diagnosticText)
-
+        return
     }
 
     Scaffold(
@@ -123,6 +103,7 @@ fun ReportScreenWorker(
             .fillMaxSize()
             .imePadding()
     ) { paddingValues ->
+
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 modifier = Modifier
@@ -132,17 +113,14 @@ fun ReportScreenWorker(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Título
                 item {
                     Text(
                         text = stringResource(R.string.report_card_title),
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
-                // Worker name
                 item {
                     CropTextField(
                         text = state.workerName,
@@ -152,7 +130,6 @@ fun ReportScreenWorker(
                     )
                 }
 
-                // Diagnostic
                 item {
                     CropTextField(
                         text = state.diagnostic,
@@ -162,81 +139,30 @@ fun ReportScreenWorker(
                     )
                 }
 
-                // ZONA
                 item {
-                    Column {
-                        CropDropdown(
-                            selected = state.selectedZone?.name ?: "",
-                            options = availableZones.map { it.name },
-                            label = "Zona de cultivo",
-                            enabled = !isLoading && availableZones.isNotEmpty(),
-                            onSelect = { zoneName ->
-                                val zone = availableZones.find { it.name == zoneName }
-                                zone?.let { reportViewModel.selectZone(it) }
-                            }
-                        )
-
-                        when {
-                            isLoading -> {
-                                Text(
-                                    text = "Cargando zonas asignadas...",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                                )
-                            }
-                            availableZones.isEmpty() -> {
-                                Text(
-                                    text = "No tienes zonas asignadas. Contacta al administrador.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                                )
-                            }
-                        }
-                    }
+                    CropTextField(
+                        text = state.selectedZone?.name ?: "",
+                        onValueChange = {},
+                        label = "Zona de cultivo",
+                        enabled = false
+                    )
                 }
 
-                // CULTIVO
                 item {
-                    Column {
-                        CropDropdown(
-                            selected = state.selectedCrop?.name ?: "",
-                            options = availableCrops.map { it.name },
-                            label = "Tipo de cultivo",
-                            enabled = state.selectedZone != null && !isLoading,
-                            onSelect = { cropName ->
-                                val crop = availableCrops.find { it.name == cropName }
-                                crop?.let { reportViewModel.selectCrop(it) }
-                            }
-                        )
-
-                        if (state.selectedZone == null) {
-                            Text(
-                                text = "Selecciona una zona primero",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                            )
-                        } else if (availableCrops.isEmpty() && !isLoading) {
-                            Text(
-                                text = "No hay cultivos en esta zona",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                            )
-                        }
-                    }
+                    CropTextField(
+                        text = state.selectedCrop?.name ?: "",
+                        onValueChange = {},
+                        label = "Tipo de cultivo",
+                        enabled = false
+                    )
                 }
 
-                // Photo preview
                 item {
-                    val imageModel = state.analizedPhoto ?: state.localPhotoPath?.let { File(it) }
-
-                    if (imageModel != null) {
+                    val img = state.localPhotoPath?.let { File(it) }
+                    if (img != null && img.exists()) {
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
-                                .data(imageModel)
+                                .data(img)
                                 .crossfade(true)
                                 .build(),
                             contentDescription = "Foto analizada",
@@ -255,28 +181,15 @@ fun ReportScreenWorker(
                                 .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_no_photo),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(48.dp)
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    "No hay foto seleccionada",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            Icon(
+                                painter = painterResource(R.drawable.ic_no_photo),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
 
-                // Observation
                 item {
                     val maxChars = 200
                     val interactionSource = remember { MutableInteractionSource() }
@@ -286,11 +199,9 @@ fun ReportScreenWorker(
                         CropTextFieldObservation(
                             text = state.observation,
                             onValueChange = { newText ->
-                                val filtered = newText
-                                    .replace("\n", " ")
-                                    .replace("\r", " ")
-                                    .take(maxChars)
-                                reportViewModel.setObservation(filtered)
+                                reportViewModel.setObservation(
+                                    newText.replace("\n", " ").take(maxChars)
+                                )
                             },
                             label = stringResource(R.string.report_card_label_observation),
                             placeholder = stringResource(R.string.report_card_placeholder_observation),
@@ -303,8 +214,7 @@ fun ReportScreenWorker(
                             interactionSource = interactionSource,
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.Sentences,
-                                imeAction = ImeAction.Done,
-                                keyboardType = KeyboardType.Text
+                                imeAction = ImeAction.Done
                             ),
                             keyboardActions = KeyboardActions(
                                 onDone = { focusManager.clearFocus() }
@@ -314,13 +224,7 @@ fun ReportScreenWorker(
                         Text(
                             text = "${state.observation.length} / $maxChars",
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (state.observation.length >= maxChars)
-                                MaterialTheme.colorScheme.error
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .align(Alignment.End)
-                                .padding(top = 4.dp)
+                            modifier = Modifier.align(Alignment.End)
                         )
                     }
 
@@ -332,28 +236,25 @@ fun ReportScreenWorker(
                     }
                 }
 
-                // Save button
                 item {
                     CropButtonPrimary(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 16.dp, bottom = 32.dp),
                         text = stringResource(R.string.report_card_button),
-                        enabled = state.selectedZone != null &&
-                                state.selectedCrop != null &&
-                                !isLoading,
+                        enabled = !isLoading,
                         onClick = {
                             focusManager.clearFocus()
                             reportViewModel.saveReport()
                             analysisViewModel.clearTemporaryImage()
                             analysisViewModel.reset()
-                            backToHome()
+                            backToSession(state.sessionId!!)
                         }
+
                     )
                 }
             }
 
-            // Loading overlay
             if (isLoading) {
                 Box(
                     modifier = Modifier

@@ -16,7 +16,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SplashViewModel @Inject constructor(
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
-    private val isUserLoggedInUseCase: IsUserLoggedInUseCase // 👈 Agregar este UseCase
+    private val isUserLoggedInUseCase: IsUserLoggedInUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SplashState>(SplashState.Loading)
@@ -28,20 +28,14 @@ class SplashViewModel @Inject constructor(
 
     private fun checkUserSession() {
         viewModelScope.launch {
-            // Tiempo mínimo para que la animación se vea completa
             delay(1000)
-
-            // 1️⃣ Verificar si hay tokens válidos
             val hasValidTokens = isUserLoggedInUseCase()
-
-            // 2️⃣ Solo si hay tokens, obtener el usuario
             val currentUser = if (hasValidTokens) {
                 getCurrentUserUseCase()
             } else {
                 null
             }
 
-            // 3️⃣ Determinar el estado
             _uiState.value = if (currentUser != null) {
                 SplashState.Authenticated(currentUser.role)
             } else {

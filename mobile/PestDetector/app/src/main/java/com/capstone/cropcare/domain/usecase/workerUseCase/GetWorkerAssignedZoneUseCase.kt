@@ -8,7 +8,8 @@ import javax.inject.Inject
 class GetWorkerAssignedZonesUseCase @Inject constructor(
     private val workersRepository: WorkersRepository
 ) {
-    operator fun invoke(workerId: String): Flow<List<ZoneModel>> {
+
+    operator fun invoke(workerId: Int): Flow<List<ZoneModel>> {
         return workersRepository.getWorkerAssignedZones(workerId)
     }
 }

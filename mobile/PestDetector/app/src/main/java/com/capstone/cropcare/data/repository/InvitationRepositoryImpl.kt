@@ -24,17 +24,17 @@ class InvitationRepositoryImpl @Inject constructor(
 
     override suspend fun generateInvitation(expiresInDays: Int): Result<InvitationModel> {
         return try {
-            // Obtener usuario actual para el nombre de la organización
             val currentUser = getCurrentUserUseCase()
                 ?: return Result.failure(Exception("Usuario no autenticado"))
 
-            // Calcular fecha de expiración (1 día = 24 horas)
+            // Calcular fecha de expiración en UTC
             val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
-            calendar.add(Calendar.HOUR, 24 * expiresInDays)
+            calendar.add(Calendar.DAY_OF_YEAR, expiresInDays)
 
             val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
                 timeZone = TimeZone.getTimeZone("UTC")
             }
+
             val expiresAtString = dateFormat.format(calendar.time)
 
             val request = CreateJoinCodeRequest(
@@ -47,26 +47,35 @@ class InvitationRepositoryImpl @Inject constructor(
 
             if (response.isSuccessful && response.body() != null) {
                 val joinCode = response.body()!!
-                val invitation = joinCode.toDomain(currentUser.organizationName)
 
-                Log.d("InvitationRepository", "✅ Código generado: ${invitation.code}")
+                // Convertir a dominio usando el empresaId del usuario
+                val invitation = joinCode.toDomain(
+                    empresaId = currentUser.empresaId
+                )
+
+                Log.d("InvitationRepo", "✅ Código generado: ${invitation.code}")
                 Result.success(invitation)
             } else {
-                val errorMsg = response.errorBody()?.string() ?: "Error al generar código"
-                Log.e("InvitationRepository", "❌ Error: $errorMsg")
-                Result.failure(Exception("No se pudo generar el código"))
+                val errorMsg = when (response.code()) {
+                    401 -> "No autorizado"
+                    403 -> "No tienes permisos para generar códigos"
+                    else -> "No se pudo generar el código"
+                }
+                Log.e("InvitationRepo", "❌ Error ${response.code()}: $errorMsg")
+                Result.failure(Exception(errorMsg))
             }
+
         } catch (e: Exception) {
-            Log.e("InvitationRepository", "❌ Exception generando código", e)
-            Result.failure(Exception("Error de conexión. Verifica tu red."))
+            Log.e("InvitationRepo", "❌ Error al generar invitación", e)
+            Result.failure(Exception("Error de conexión: ${e.message}"))
         }
     }
 
     override suspend fun getInvitations(): Flow<List<InvitationModel>> = flow {
         try {
-            // Obtener usuario actual para el nombre de la organización
             val currentUser = getCurrentUserUseCase()
             if (currentUser == null) {
+                Log.w("InvitationRepo", "⚠️ Usuario no autenticado")
                 emit(emptyList())
                 return@flow
             }
@@ -74,23 +83,29 @@ class InvitationRepositoryImpl @Inject constructor(
             val response = apiService.getJoinCodes()
 
             if (response.isSuccessful && response.body() != null) {
-                val invitations = response.body()!!.map {
-                    it.toDomain(currentUser.organizationName)
+                val invitations = response.body()!!.map { joinCodeDto ->
+                    joinCodeDto.toDomain(
+                        empresaId = currentUser.empresaId
+                    )
                 }
+
+                Log.d("InvitationRepo", "✅ ${invitations.size} códigos obtenidos")
                 emit(invitations)
-                Log.d("InvitationRepository", "✅ ${invitations.size} códigos obtenidos")
             } else {
-                Log.e("InvitationRepository", "❌ Error obteniendo códigos")
+                Log.e("InvitationRepo", "❌ Error al obtener códigos: ${response.code()}")
                 emit(emptyList())
             }
+
         } catch (e: Exception) {
-            Log.e("InvitationRepository", "❌ Exception obteniendo códigos", e)
+            Log.e("InvitationRepo", "❌ Error al obtener invitaciones", e)
             emit(emptyList())
         }
     }
 
     override suspend fun deleteInvitation(invitationId: String): Result<Unit> {
-        // Tu backend no tiene endpoint de DELETE para códigos
+        // El backend actual no soporta DELETE de códigos
+        // Podrías implementar un endpoint de "revoke" si lo agregas al backend
+        Log.w("InvitationRepo", "⚠️ Eliminación de códigos no implementada en el backend")
         return Result.success(Unit)
     }
 }

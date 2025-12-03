@@ -2,9 +2,10 @@ package com.capstone.cropcare.data.remote.dto
 
 import com.google.gson.annotations.SerializedName
 
-// ========== REQUESTS ==========
+// ==================== REQUESTS ====================
+
 data class LoginRequest(
-    val username: String, // Backend usa username (que es el email)
+    val email: String,  // ✅ Backend Django espera "email"
     val password: String
 )
 
@@ -15,8 +16,11 @@ data class RegisterAdminRequest(
     val firstName: String,
     @SerializedName("last_name")
     val lastName: String,
+    val phone: String = "",
     @SerializedName("company_name")
-    val companyName: String
+    val companyName: String,
+    @SerializedName("tax_id")
+    val taxId: String
 )
 
 data class RegisterWorkerRequest(
@@ -26,6 +30,7 @@ data class RegisterWorkerRequest(
     val firstName: String,
     @SerializedName("last_name")
     val lastName: String,
+    val phone: String = "",
     @SerializedName("join_code")
     val joinCode: String
 )
@@ -38,89 +43,45 @@ data class RefreshTokenRequest(
     val refresh: String
 )
 
-// ========== RESPONSES ==========
+// ==================== RESPONSES ====================
 
-// Respuesta de Login (Djoser devuelve solo tokens)
 data class TokenResponse(
     val access: String,
     val refresh: String
-)
-
-// Respuesta de Register (Admin y Worker)
-data class AuthResponse(
-    val user: BackendUserDto,
-    val profile: ProfileDto,
-    val empresa: EmpresaDto,
-    val tokens: TokensDto
-)
-
-data class BackendUserDto(
-    val id: Int,
-    val username: String,
-    val email: String,
-    @SerializedName("first_name")
-    val firstName: String,
-    @SerializedName("last_name")
-    val lastName: String
-)
-
-data class ProfileDto(
-    val user: ProfileUserDto,
-    val role: String, // "ADMIN" o "WORKER"
-    val empresa: EmpresaDto,
-    @SerializedName("is_active")
-    val isActive: Boolean,
-    @SerializedName("can_manage_plots")
-    val canManagePlots: Boolean,
-    @SerializedName("joined_at")
-    val joinedAt: String
-)
-
-data class ProfileUserDto(
-    val id: Int,
-    val username: String
-)
-
-data class EmpresaDto(
-    val id: Int,
-    val name: String,
-    @SerializedName("legal_name")
-    val legalName: String?,
-    @SerializedName("tax_id")
-    val taxId: String?,
-    val country: String,
-    val timezone: String,
-    val owner: Int,
-    @SerializedName("created_at")
-    val createdAt: String
-)
-
-data class TokensDto(
-    val access: String,
-    val refresh: String
-)
-
-data class ValidateCodeResponse(
-    val valid: Boolean,
-    @SerializedName("company_name")
-    val companyName: String? = null,
-    @SerializedName("empresa_id")
-    val empresaId: Int? = null,
-    val error: String? = null
 )
 
 data class RefreshTokenResponse(
     val access: String
 )
 
-// Respuesta del endpoint /me
-data class MeResponse(
-    val user: BackendUserDto,
-    val profile: ProfileDto,
-    val empresa: EmpresaDto?
+data class RegisterAdminResponse(
+    val message: String,
+    @SerializedName("user_id")
+    val userId: Int,
+    @SerializedName("empresa_id")
+    val empresaId: Int
 )
 
-// ========== ERROR RESPONSE ==========
+data class RegisterWorkerResponse(
+    val message: String,
+    @SerializedName("user_id")
+    val userId: Int,
+    @SerializedName("empresa_id")
+    val empresaId: Int
+)
+
+data class ValidateCodeResponse(
+    val valid: Boolean,
+    val empresa: String? = null,        // ✅ Cambio: era "companyName"
+    @SerializedName("expires_at")
+    val expiresAt: String? = null,
+    @SerializedName("max_uses")
+    val maxUses: Int? = null,
+    @SerializedName("used_count")
+    val usedCount: Int? = null,
+    val error: String? = null
+)
+
 data class ErrorResponse(
     val error: String? = null,
     val detail: String? = null,

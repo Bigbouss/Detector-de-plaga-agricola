@@ -17,7 +17,7 @@ class AddCropToZoneUseCase @Inject constructor(
             return Result.failure(Exception("El nombre debe tener al menos 2 caracteres"))
         }
 
-        // ✅ CAMBIO: Llamar al backend
+
         return cropZoneRepository.createCrop(
             name = cropName.trim(),
             zoneId = zoneId

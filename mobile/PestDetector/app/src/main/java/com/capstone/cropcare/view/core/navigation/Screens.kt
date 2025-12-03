@@ -33,8 +33,15 @@ object CamaraScreen
 @Serializable
 object AnalysisResultScreen
 
+//@Serializable
+//object ReportScreen
+
 @Serializable
-object ReportScreen
+data class ReportScreen(val sessionId: String, val scanResultId: String)
+
+
+@Serializable
+object QuickReport
 
 // ----- Screens para administrador -----
 @Serializable
@@ -60,7 +67,7 @@ object InvitationManagement
 
 @Serializable
 data class AssignZones(
-    val workerId: String,
+    val workerId: Int,
     val workerName: String
 )
 
@@ -68,7 +75,8 @@ data class AssignZones(
 object ScanConfig
 
 @Serializable
-object ScanSession
+data class ScanSession(val sessionId: String)
+
 
 @Serializable
 object ScanZone

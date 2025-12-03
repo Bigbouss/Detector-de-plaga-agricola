@@ -3,51 +3,52 @@ package com.capstone.cropcare.data.remote.api
 import com.capstone.cropcare.data.remote.dto.*
 import retrofit2.Response
 import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.POST
 
 interface AuthApiService {
 
-    // Login
-    @POST("orgs/auth/token/")
+    /**
+     * Login con JWT
+     * POST /api/accounts/auth/login/
+     */
+    @POST("api/accounts/auth/login/")
     suspend fun login(
         @Body request: LoginRequest
     ): Response<TokenResponse>
 
-    // Register Admin
-    @POST("orgs/auth/register-admin/")
-    suspend fun registerAdmin(
-        @Body request: RegisterAdminRequest
-    ): Response<AuthResponse>
-
-    // Register Worker
-    @POST("orgs/auth/register-worker/")
-    suspend fun registerWorker(
-        @Body request: RegisterWorkerRequest
-    ): Response<AuthResponse>
-
-    // Validar código de invitación+
-    @POST("orgs/join-codes/validate/")
-    suspend fun validateInvitationCode(
-        @Body request: ValidateCodeRequest
-    ): Response<ValidateCodeResponse>
-
-    // Obtener datos del usuario autenticado
-    @GET("orgs/auth/me/")
-    suspend fun getMe(
-        @Header("Authorization") token: String
-    ): Response<MeResponse>
-
-    // Refresh token
-    @POST("orgs/auth/token/refresh/")
+    /**
+     * Refresh del access token
+     * POST /api/accounts/auth/token/refresh/
+     */
+    @POST("api/accounts/auth/token/refresh/")
     suspend fun refreshToken(
         @Body request: RefreshTokenRequest
     ): Response<RefreshTokenResponse>
 
-    // Logout
-    @POST("auth/logout/")
-    suspend fun logout(
-        @Header("Authorization") token: String
-    ): Response<Unit>
+    /**
+     * Registro de ADMIN (crea empresa y usuario)
+     * POST /api/accounts/auth/register-admin/
+     */
+    @POST("api/accounts/auth/register-admin/")
+    suspend fun registerAdmin(
+        @Body request: RegisterAdminRequest
+    ): Response<RegisterAdminResponse>
+
+    /**
+     * Registro de WORKER (con join code)
+     * POST /api/accounts/auth/register-worker/
+     */
+    @POST("api/accounts/auth/register-worker/")
+    suspend fun registerWorker(
+        @Body request: RegisterWorkerRequest
+    ): Response<RegisterWorkerResponse>
+
+    /**
+     * Validar código de invitación
+     * POST /api/joincodes/validate-code/
+     */
+    @POST("api/joincodes/validate-code/")
+    suspend fun validateJoinCode(
+        @Body request: ValidateCodeRequest
+    ): Response<ValidateCodeResponse>
 }

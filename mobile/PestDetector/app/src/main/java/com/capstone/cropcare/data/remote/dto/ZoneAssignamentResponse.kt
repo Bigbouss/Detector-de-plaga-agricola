@@ -11,18 +11,17 @@ data class AssignZonesRequest(
 )
 
 // ========== RESPONSES ==========
-data class WorkerZoneAssignmentResponse(
-    val id: Int,
-    val worker: Int,
-    val zones: List<ZoneResponse>,
-    @SerializedName("created_at")
-    val createdAt: String,
-    @SerializedName("updated_at")
-    val updatedAt: String
+data class AssignZonesResponse(
+    val message: String,
+    @SerializedName("worker_id")
+    val workerId: Int,
+    @SerializedName("assigned_zone_ids")
+    val assignedZoneIds: List<Int>
 )
 
-data class AssignedZoneDto(
-    val id: Int,
-    val nombre: String,
-    val descripcion: String?
+data class WorkerZonesResponse(
+    @SerializedName("worker_id")
+    val workerId: Int,
+    @SerializedName("zone_ids")
+    val zoneIds: List<Int>
 )

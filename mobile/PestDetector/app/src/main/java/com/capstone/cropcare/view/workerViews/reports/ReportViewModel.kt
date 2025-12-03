@@ -11,11 +11,12 @@ import com.capstone.cropcare.domain.model.ZoneModel
 import com.capstone.cropcare.domain.repository.AuthRepository
 import com.capstone.cropcare.domain.repository.CropZoneRepository
 import com.capstone.cropcare.domain.repository.ReportRepository
+import com.capstone.cropcare.domain.repository.ScanResultRepository
+import com.capstone.cropcare.domain.repository.ScanSessionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first  // ✅ Agregar este import
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
@@ -27,166 +28,140 @@ class ReportViewModel @Inject constructor(
     private val reportRepository: ReportRepository,
     private val cropZoneRepository: CropZoneRepository,
     private val authRepository: AuthRepository,
+    private val scanSessionRepository: ScanSessionRepository,
+    private val scanResultRepository: ScanResultRepository,
     private val app: Application
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ReportState())
     val state: StateFlow<ReportState> = _state.asStateFlow()
 
-    private val _availableZones = MutableStateFlow<List<ZoneModel>>(emptyList())
-    val availableZones: StateFlow<List<ZoneModel>> = _availableZones.asStateFlow()
-
-    private val _availableCrops = MutableStateFlow<List<CropModel>>(emptyList())
-    val availableCrops: StateFlow<List<CropModel>> = _availableCrops.asStateFlow()
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
-
     init {
-        loadAssignedZones()
-        loadCurrentWorkerName()
+        loadCurrentWorkerInfo()
     }
 
-    private fun loadCurrentWorkerName() {
+    private fun loadCurrentWorkerInfo() {
         viewModelScope.launch {
             try {
-                val user = authRepository.getCurrentUser()
-                if (user != null) {
-                    setWorkerName(user.name)
+                authRepository.getCurrentUser()?.let { user ->
+                    val displayName = user.email.substringBefore("@")
+
+                    _state.update { s ->
+                        s.copy(
+                            workerName = displayName,
+                            workerId = user.id
+                        )
+                    }
                 }
             } catch (e: Exception) {
-                Log.e("ReportViewModel", "❌ Error obteniendo nombre del trabajador", e)
+                Log.e("ReportViewModel", "Error obteniendo info del trabajador", e)
             }
         }
     }
 
-    private fun loadAssignedZones() {
+
+    fun loadFromScan(sessionId: String, scanResultId: String) {
         viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
-
             try {
-                // ✅ Obtener zonas asignadas directamente desde el backend
-                val result = cropZoneRepository.getAssignedZonesForCurrentWorker()
+                val session = scanSessionRepository.getSessionById(sessionId)
+                val scan = scanResultRepository.getScanResultById(scanResultId)
 
-                if (result.isSuccess) {
-                    val zones = result.getOrNull() ?: emptyList()
-                    _availableZones.value = zones
-                    Log.d("ReportViewModel", "✅ Zonas asignadas cargadas: ${zones.map { it.name }}")
-                } else {
-                    Log.e("ReportViewModel", "❌ Error cargando zonas asignadas")
-                    _errorMessage.value = "No se pudieron cargar las zonas asignadas"
+                if (session != null && scan != null) {
+                    _state.update { s ->
+                        s.copy(
+                            selectedZone = ZoneModel(
+                                id = session.zoneId,
+                                name = session.zoneName
+                            ),
+                            selectedCrop = CropModel(
+                                id = session.cropId,
+                                name = session.cropName,
+                                zoneId = session.zoneId
+                            ),
+                            diagnostic = scan.classification,
+                            localPhotoPath = scan.photoPath,
+                            observation = "",
+                            sessionId = sessionId,
+                            scanResultId = scanResultId
+                        )
+                    }
                 }
 
             } catch (e: Exception) {
-                Log.e("ReportViewModel", "❌ Error cargando zonas asignadas", e)
-                _errorMessage.value = "Error al cargar zonas: ${e.message}"
-            } finally {
-                _isLoading.value = false
+                _errorMessage.value = "Error cargando datos de escaneo: ${e.message}"
             }
         }
-    }
-
-    fun selectZone(zone: ZoneModel) {
-        _state.update { it.copy(selectedZone = zone, selectedCrop = null) }
-        _availableCrops.value = emptyList()
-
-        viewModelScope.launch {
-            try {
-                // Sincronizar cultivos desde backend
-                val syncResult = cropZoneRepository.syncCropsForZone(zone.id)
-
-                if (syncResult.isSuccess) {
-                    Log.d("ReportViewModel", "✅ Cultivos sincronizados para zona ${zone.name}")
-                }
-
-                // ✅ CAMBIO: Usar first() en lugar de collect()
-                val crops = cropZoneRepository.getCropsByZone(zone.id).first()
-                _availableCrops.value = crops
-                Log.d("ReportViewModel", "🌾 Cultivos cargados: ${crops.map { it.name }}")
-
-            } catch (e: Exception) {
-                Log.e("ReportViewModel", "❌ Error cargando cultivos", e)
-                _errorMessage.value = "Error al cargar cultivos: ${e.message}"
-            }
-        }
-    }
-
-    fun selectCrop(crop: CropModel) {
-        _state.update { it.copy(selectedCrop = crop) }
-    }
-
-    fun setWorkerName(name: String) {
-        _state.update { it.copy(workerName = name) }
     }
 
     fun setDiagnostic(diagnostic: String) {
         _state.update { it.copy(diagnostic = diagnostic) }
     }
 
-    fun setLocalPhotoPath(path: String) {
-        _state.update { it.copy(localPhotoPath = path) }
+    fun setObservation(text: String) {
+        _state.update { it.copy(observation = text) }
     }
 
     fun setAnalizedPhoto(bitmap: Bitmap) {
         _state.update { it.copy(analizedPhoto = bitmap) }
     }
 
-    fun setObservation(observation: String) {
-        _state.update { it.copy(observation = observation) }
+    fun setLocalPhotoPath(path: String) {
+        _state.update { it.copy(localPhotoPath = path) }
     }
 
+    /**
+     * Guarda el reporte en Room (modo offline-first)
+     */
     fun saveReport() = viewModelScope.launch {
         val current = _state.value
 
-        if (current.selectedZone == null) {
-            Log.e("ReportViewModel", "❌ Zona no seleccionada")
-            _errorMessage.value = "Debes seleccionar una zona"
-            return@launch
-        }
-        if (current.selectedCrop == null) {
-            Log.e("ReportViewModel", "❌ Cultivo no seleccionado")
-            _errorMessage.value = "Debes seleccionar un cultivo"
+        if (current.selectedZone == null || current.selectedCrop == null) {
+            _errorMessage.value = "Error interno: Zona o cultivo faltan en el reporte"
             return@launch
         }
 
-        val finalPath = current.localPhotoPath ?: saveBitmapToLocalPath(current.analizedPhoto)
+        val finalPath = current.localPhotoPath ?: saveBitmap(current.analizedPhoto)
 
         val report = ReportModel(
+            id = 0, // autogen por Room
             workerName = current.workerName,
+            workerId = current.workerId,
             diagnostic = current.diagnostic,
+            confidence = null,
             zone = current.selectedZone,
             crop = current.selectedCrop,
             photoPath = finalPath,
             observation = current.observation,
             timestamp = current.timestamp,
+            sessionId = current.sessionId,
+            scanResultId = current.scanResultId,
             syncedWithBackend = false
         )
 
         try {
             reportRepository.insertReport(report)
-            Log.d("ReportViewModel", "✅ Reporte guardado exitosamente")
-            _errorMessage.value = null
+            Log.d("ReportViewModel", "Reporte guardado correctamente")
         } catch (e: Exception) {
-            Log.e("ReportViewModel", "❌ Error guardando reporte", e)
-            _errorMessage.value = "Error al guardar reporte: ${e.message}"
+            _errorMessage.value = "Error guardando reporte: ${e.message}"
         }
     }
 
-    private fun saveBitmapToLocalPath(bitmap: Bitmap?): String? {
+    private fun saveBitmap(bitmap: Bitmap?): String? {
         if (bitmap == null) return null
         return try {
-            val filename = "report_${System.currentTimeMillis()}.jpg"
-            val file = File(app.filesDir, filename)
-            FileOutputStream(file).use { stream ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+            val file = File(app.filesDir, "report_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(file).use {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it)
             }
             file.absolutePath
         } catch (e: Exception) {
-            Log.e("ReportViewModel", "❌ Error guardando bitmap", e)
+            _errorMessage.value = "Error guardando imagen: ${e.message}"
             null
         }
     }
@@ -198,11 +173,14 @@ class ReportViewModel @Inject constructor(
 
 data class ReportState(
     val workerName: String = "",
+    val workerId: Int = -1,
     val diagnostic: String = "",
     val selectedZone: ZoneModel? = null,
     val selectedCrop: CropModel? = null,
     val analizedPhoto: Bitmap? = null,
     val localPhotoPath: String? = null,
     val observation: String = "",
+    val sessionId: String? = null,
+    val scanResultId: String? = null,
     val timestamp: Long = System.currentTimeMillis()
 )

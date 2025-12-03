@@ -10,10 +10,7 @@ import com.capstone.cropcare.domain.mappers.toDomain
 import com.capstone.cropcare.domain.model.WorkerModel
 import com.capstone.cropcare.domain.model.ZoneModel
 import com.capstone.cropcare.domain.repository.WorkersRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,121 +21,86 @@ class WorkersRepositoryImpl @Inject constructor(
     private val zoneDao: ZoneDao
 ) : WorkersRepository {
 
-    override suspend fun getWorkers(): Flow<List<WorkerModel>> = flow {
+    override suspend fun getAllWorkers(): Flow<List<WorkerModel>> = flow {
         try {
             val response = apiService.getWorkers()
 
             if (response.isSuccessful && response.body() != null) {
                 val workersFromApi = response.body()!!.map { it.toDomain() }
 
-                // Enriquecer cada worker con sus zonas asignadas desde Room
                 val workersWithZones = workersFromApi.map { worker ->
-                    val assignedZoneIds = assignmentDao.getZoneIdsForWorker(worker.id)
+                    // Convertir Int a String para Room
+                    val assignedZoneIds = assignmentDao.getZoneIdsForWorker(worker.id.toString())
                     worker.copy(assignedZoneIds = assignedZoneIds)
                 }
 
                 emit(workersWithZones)
-                Log.d("WorkersRepository", "✅ ${workersWithZones.size} trabajadores obtenidos")
+                Log.d("WorkersRepository", "${workersWithZones.size} trabajadores obtenidos")
             } else {
-                Log.e("WorkersRepository", "❌ Error obteniendo trabajadores")
+                Log.e("WorkersRepository", "Error obteniendo trabajadores: ${response.code()}")
                 emit(emptyList())
             }
         } catch (e: Exception) {
-            Log.e("WorkersRepository", "❌ Exception obteniendo trabajadores", e)
+            Log.e("WorkersRepository", "Exception obteniendo trabajadores", e)
             emit(emptyList())
         }
     }
 
-    override suspend fun deleteWorker(workerId: String): Result<Unit> {
-        return try {
-            val id = workerId.toIntOrNull()
-                ?: return Result.failure(Exception("ID inválido"))
+    override fun getWorkerAssignedZones(workerId: Int): Flow<List<ZoneModel>> {
+        val workerIdStr = workerId.toString()
 
-            val response = apiService.deleteWorker(id)
+        return assignmentDao.getAssignedZoneIds(workerIdStr)
+            .flatMapLatest { assignments ->
+                val zoneIds = assignments.map { it.zoneId }
 
-            if (response.isSuccessful) {
-                // Eliminar asignaciones locales también
-                assignmentDao.deleteAssignmentsForWorker(workerId)
-                Log.d("WorkersRepository", "✅ Trabajador eliminado: $workerId")
-                Result.success(Unit)
-            } else {
-                val errorMsg = response.errorBody()?.string() ?: "Error al eliminar"
-                Log.e("WorkersRepository", "❌ Error: $errorMsg")
-                Result.failure(Exception("No se pudo eliminar el trabajador"))
+                // Obtener zonas desde Room y filtrar
+                zoneDao.getAllZones().map { allZones ->
+                    allZones
+                        .filter { zoneEntity -> zoneIds.contains(zoneEntity.zoneId) }
+                        .map { zoneEntity -> zoneEntity.toDomain() }
+                }
             }
-        } catch (e: Exception) {
-            Log.e("WorkersRepository", "❌ Exception eliminando trabajador", e)
-            Result.failure(Exception("Error de conexión"))
-        }
     }
 
-    override suspend fun updateWorkerPermissions(
-        workerId: String,
-        canManagePlots: Boolean
-    ): Result<Unit> {
-        // TODO: Implementar cuando el backend tenga este endpoint
-        return Result.failure(Exception("Funcionalidad no disponible aún"))
-    }
-
-    // En WorkersRepositoryImpl, cambia esto:
-    override suspend fun assignZonesToWorker(
-        workerId: String,
-        zoneIds: List<String>
-    ): Result<Unit> {
+    override suspend fun assignZonesToWorker(workerId: Int, zoneIds: List<Int>): Result<Unit> {
         return try {
-            val workerIdInt = workerId.toIntOrNull()
-                ?: return Result.failure(Exception("ID de trabajador inválido"))
+            Log.d("WorkersRepository", "Asignando ${zoneIds.size} zonas al worker $workerId")
 
-            val zoneIdsInt = zoneIds.mapNotNull { it.toIntOrNull() }
-
-            // ✅ USA assignZonesToWorker en lugar de updateWorkerZones
             val response = apiService.assignZonesToWorker(
-                workerIdInt,
-                AssignZonesRequest(workerIdInt, zoneIdsInt)
+                AssignZonesRequest(workerId, zoneIds)
             )
 
-            if (response.isSuccessful) {
-                // Actualizar Room: eliminar asignaciones anteriores e insertar nuevas
-                assignmentDao.deleteAssignmentsForWorker(workerId)
+            if (response.isSuccessful && response.body() != null) {
+                // Actualizar Room con las asignaciones
+                val workerIdStr = workerId.toString()
+                assignmentDao.deleteAssignmentsForWorker(workerIdStr)
 
                 val assignments = zoneIds.map { zoneId ->
                     WorkerZoneAssignmentEntity(
-                        workerId = workerId,
-                        zoneId = zoneId
+                        workerId = workerIdStr,
+                        zoneId = zoneId.toString()
                     )
                 }
                 assignmentDao.insertAssignments(assignments)
 
-                Log.d("WorkersRepository", "✅ Zonas asignadas a trabajador $workerId")
+                Log.d("WorkersRepository", "Zonas asignadas exitosamente")
                 Result.success(Unit)
             } else {
                 val errorMsg = response.errorBody()?.string() ?: "Error al asignar zonas"
-                Log.e("WorkersRepository", "❌ Error: $errorMsg")
+                Log.e("WorkersRepository", "Error: $errorMsg")
                 Result.failure(Exception("No se pudieron asignar las zonas"))
             }
         } catch (e: Exception) {
-            Log.e("WorkersRepository", "❌ Exception asignando zonas", e)
-            Result.failure(Exception("Error de conexión"))
+            Log.e("WorkersRepository", "Exception asignando zonas", e)
+            Result.failure(Exception("Error de conexión: ${e.message}"))
         }
     }
 
-
-
-    override fun getWorkerAssignedZones(workerId: String): Flow<List<ZoneModel>> {
-        return assignmentDao.getAssignedZoneIds(workerId).map { assignments ->
-            val zoneIds = assignments.map { it.zoneId }
-
-            // Obtener todas las zonas y filtrar
-            val allZones = zoneDao.getAllZones().first()
-
-            // Filtrar solo las zonas asignadas y convertir a dominio
-            allZones
-                .filter { zoneEntity -> zoneIds.contains(zoneEntity.zoneId) }
-                .map { zoneEntity -> zoneEntity.toDomain() }
-        }
-    }
-
-    override suspend fun getWorkerAssignedZoneIds(workerId: String): List<String> {
-        return assignmentDao.getZoneIdsForWorker(workerId)
+    override suspend fun updateWorkerPermissions(
+        workerId: Int,
+        canManagePlots: Boolean
+    ): Result<Unit> {
+        Log.w("WorkersRepository", "updateWorkerPermissions no implementado en el backend")
+        return Result.failure(Exception("Funcionalidad no disponible aún"))
     }
 }

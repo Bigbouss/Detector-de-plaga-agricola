@@ -1,6 +1,5 @@
 package com.capstone.cropcare.view.auth.register.admin
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -89,12 +88,23 @@ fun RegisterAdminScreen(
                         )
                         Spacer(Modifier.height(8.dp))
 
-                        // NAME
+                        // ✅ FIRST NAME
                         OutlinedTextField(
-                            value = uiState.name,
-                            onValueChange = { registerViewModel.onNameChanged(it) },
+                            value = uiState.firstName,
+                            onValueChange = { registerViewModel.onFirstNameChanged(it) },
                             modifier = Modifier.fillMaxWidth(),
-                            label = { CropTextLabels(text = "Tu Nombre Completo") },
+                            label = { CropTextLabels(text = "Nombre") },
+                            shape = MaterialTheme.shapes.medium,
+                            textStyle = MaterialTheme.typography.bodyLarge
+                        )
+                        Spacer(Modifier.height(8.dp))
+
+                        // ✅ LAST NAME
+                        OutlinedTextField(
+                            value = uiState.lastName,
+                            onValueChange = { registerViewModel.onLastNameChanged(it) },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { CropTextLabels(text = "Apellido") },
                             shape = MaterialTheme.shapes.medium,
                             textStyle = MaterialTheme.typography.bodyLarge
                         )
@@ -104,6 +114,30 @@ fun RegisterAdminScreen(
                         EmailTextField(
                             email = uiState.email,
                             onEmailChanged = { registerViewModel.onEmailChanged(it) }
+                        )
+                        Spacer(Modifier.height(8.dp))
+
+                        //PHONE (NO OPCIONAL)
+                        OutlinedTextField(
+                            value = uiState.phone,
+                            onValueChange = { registerViewModel.onPhoneChanged(it) },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { CropTextLabels(text = "Teléfono") },
+                            shape = MaterialTheme.shapes.medium,
+                            textStyle = MaterialTheme.typography.bodyLarge,
+                            placeholder = { Text("+56912345678") }
+                        )
+                        Spacer(Modifier.height(8.dp))
+
+                        //TAX ID (RUT)
+                        OutlinedTextField(
+                            value = uiState.taxId,
+                            onValueChange = { registerViewModel.onTaxIdChanged(it) },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { CropTextLabels(text = "RUT de la Empresa") },
+                            shape = MaterialTheme.shapes.medium,
+                            textStyle = MaterialTheme.typography.bodyLarge,
+                            placeholder = { Text("12345678-9") }
                         )
                         Spacer(Modifier.height(8.dp))
 

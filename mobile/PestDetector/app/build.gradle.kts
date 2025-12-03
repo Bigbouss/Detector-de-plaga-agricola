@@ -98,6 +98,9 @@ dependencies {
     implementation(libs.play.services.location)
     ksp(libs.hilt.compiler)
 
+    //WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
     //ROOM
     val room_version = "2.8.0"
     implementation(libs.androidx.room.runtime)
@@ -118,6 +121,9 @@ dependencies {
     implementation(libs.tensorflow.lite)
     implementation(libs.tensorflow.lite.support)
     implementation(libs.tensorflow.lite.gpu)
+
+    //Coil
+    implementation(libs.coil.kt.coil.compose)
 
 
     //Testing

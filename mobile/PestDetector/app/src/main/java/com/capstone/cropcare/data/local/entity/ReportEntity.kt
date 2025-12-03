@@ -6,7 +6,6 @@ import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
 import androidx.room.Index
 
-
 @Entity(
     tableName = "reports",
     foreignKeys = [
@@ -25,31 +24,23 @@ import androidx.room.Index
     ],
     indices = [
         Index(value = ["zoneId"]),
-        Index(value = ["cropId"])
+        Index(value = ["cropId"]),
+        Index(value = ["workerId"]),
+        Index(value = ["sessionId"]),
+        Index(value = ["scanResultId"])
     ]
 )
 data class ReportEntity(
     @PrimaryKey(autoGenerate = true) val reportId: Int = 0,
     val workerName: String,
+    val workerId: Int,
     val diagnostic: String,
     val zoneId: String,
     val cropId: String,
     val localPhotoPath: String?,
     val observation: String,
     val timestamp: Long = System.currentTimeMillis(),
-    val syncedWithBackend: Boolean = false
+    val syncedWithBackend: Boolean = false,
+    val sessionId: String? = null,
+    val scanResultId: String? = null
 )
-
-
-//@Entity(tableName = "report_form")
-//data class ReportEntity(
-//    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-//    @ColumnInfo(name = "worker_name") val workerName: String,
-//    @ColumnInfo(name = "diagnostic") val diagnostic: String,
-//    @ColumnInfo(name = "crop_zone") val cropZone: String,
-//    @ColumnInfo(name = "local_photo_path") val localPhotoPath: String? = null,
-//    @ColumnInfo(name = "remote_photo_url") val remotePhotoUrl: String? = null,
-//    @ColumnInfo(name = "observation") val observation: String,
-//    @ColumnInfo(name = "timestamp") val timestamp: Long = System.currentTimeMillis(),
-//    @ColumnInfo(name = "is_synced") val isSynced: Boolean = false
-//)

@@ -13,22 +13,19 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.ByteBuffer
 
-/**
- * Clasificador de plantas usando TensorFlow Lite
- */
 class PlantClassifier(
     private val context: Context,
-    private val cropType: String // "apple", "corn", "potato"
+    private val cropType: String // "corn", "potato"
 ) {
     private var interpreter: Interpreter? = null
     private var labels: List<String> = emptyList()
 
-    private val inputSize = 224 // Tamaño de entrada del modelo
+    private val inputSize = 224
 
     // Procesador de imágenes
     private val imageProcessor = ImageProcessor.Builder()
         .add(ResizeOp(inputSize, inputSize, ResizeOp.ResizeMethod.BILINEAR))
-        .add(NormalizeOp(0f, 255f)) // Normaliza [0, 255] -> [0, 1]
+        .add(NormalizeOp(0f, 255f))
         .build()
 
     init {
@@ -36,24 +33,21 @@ class PlantClassifier(
         loadLabels()
     }
 
-    /**
-     * Carga el modelo TFLite desde assets
-     */
     private fun loadModel() {
         try {
             val modelPath = when (cropType.lowercase()) {
                 "manzanas", "apple" -> "models/AppleModel.tflite"
                 "maiz", "corn" -> "models/CornModel.tflite"
                 "papas", "potato" -> "models/PotatoModel.tflite"
-                else -> "models/AppleModel.tflite" // Default
+                else -> "models/CornModel.tflite" // Default
             }
 
             val model = FileUtil.loadMappedFile(context, modelPath)
             interpreter = Interpreter(model)
 
-            Log.d("PlantClassifier", "✅ Modelo cargado: $modelPath")
+            Log.d("PlantClassifier", "Modelo cargado: $modelPath")
         } catch (e: Exception) {
-            Log.e("PlantClassifier", "❌ Error cargando modelo", e)
+            Log.e("PlantClassifier", "Error cargando modelo", e)
         }
     }
 
@@ -66,17 +60,17 @@ class PlantClassifier(
                 "manzanas", "apple" -> "labels/AppleLabels.txt"
                 "maiz", "corn" -> "labels/CornLabels.txt"
                 "papas", "potato" -> "labels/PotatoLabels.txt"
-                else -> "labels/AppleLabels.txt" // Default
+                else -> "labels/CornLabels.txt" // Default
             }
 
             val reader = BufferedReader(InputStreamReader(context.assets.open(labelPath)))
             labels = reader.readLines()
             reader.close()
 
-            Log.d("PlantClassifier", "✅ Labels cargados: ${labels.size} clases")
+            Log.d("PlantClassifier", "Labels cargados: ${labels.size} clases")
             Log.d("PlantClassifier", "Labels: $labels")
         } catch (e: Exception) {
-            Log.e("PlantClassifier", "❌ Error cargando labels", e)
+            Log.e("PlantClassifier", "Error cargando labels", e)
         }
     }
 
@@ -129,7 +123,7 @@ class PlantClassifier(
             )
 
         } catch (e: Exception) {
-            Log.e("PlantClassifier", "❌ Error en clasificación", e)
+            Log.e("PlantClassifier", "Error en clasificación", e)
             return ClassificationResult(
                 label = "Error: ${e.message}",
                 confidence = 0f,
@@ -139,9 +133,6 @@ class PlantClassifier(
         }
     }
 
-    /**
-     * Determina si una etiqueta corresponde a una plaga
-     */
     private fun isPlaguePrediction(label: String): Boolean {
         val healthyKeywords = listOf(
             "healthy", "sano", "sana", "normal"
@@ -152,9 +143,6 @@ class PlantClassifier(
         }
     }
 
-    /**
-     * Libera recursos
-     */
     fun close() {
         interpreter?.close()
         interpreter = null
@@ -162,12 +150,9 @@ class PlantClassifier(
     }
 }
 
-/**
- * Resultado de la clasificación
- */
 data class ClassificationResult(
     val label: String,
     val confidence: Float,
     val isPlague: Boolean,
-    val allScores: Map<String, Float> // Todas las predicciones con sus scores
+    val allScores: Map<String, Float>
 )

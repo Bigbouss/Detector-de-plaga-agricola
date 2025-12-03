@@ -60,7 +60,7 @@ class LoginViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             loginSuccess = true,
-                            user = user // 👈 Guardamos el user
+                            user = user
                         )
                     }
                 },
@@ -87,6 +87,6 @@ data class LoginState(
     val isLoginEnabled: Boolean = false,
     val isLoading: Boolean = false,
     val loginSuccess: Boolean = false,
-    val user: UserModel? = null, // 👈 Usuario logueado
+    val user: UserModel? = null,
     val error: String? = null
 )
